@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "ponytail": {
+      "source": "dietrichgebert/ponytail",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail/SKILL.md",
+      "computedHash": "dc44b17f49b1228761af8303a51bc028cd1cca866ba8d23d6072ef5fd4e0ba94"
+    },
+    "ui-ux-design": {
+      "source": "arvindand/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ui-ux-design/SKILL.md",
+      "computedHash": "92281f84426b630b3a2f660941eaed4c52400240eb4535923c296cdf75e15ee1"
+    },
+    "web-accessibility": {
+      "source": "hoodini/ai-agents-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-accessibility/SKILL.md",
+      "computedHash": "0b5f9a9c98a7d1e3f6494b4d95f9fba30957e1b14810c53870aeb506dc0cefc2"
+    },
+    "web-design-guidelines": {
+      "source": "tech-leads-club/agent-skills",
+      "sourceType": "github",
+      "skillPath": "packages/skills-catalog/skills/(design)/web-design-guidelines/SKILL.md",
+      "computedHash": "3b8d93ef7fcefb882f7b7cf4657e8a33af8312ec2a90eb70e0fe202e5c191484"
+    }
+  }
+}

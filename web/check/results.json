@@ -1,0 +1,276 @@
+{
+  "date": "2026-10-10T17:49:52.662Z",
+  "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A6) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "seed": 1,
+  "speed": 1,
+  "seconds": 5,
+  "status": "un seul run par flotte, solveur non validé",
+  "results": [
+    {
+      "frames": 300,
+      "fps": 60.00120002400049,
+      "p95": 16.700000000000728,
+      "max": 16.800000000000182,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.03760051727294922,
+      "totalMove": 39.039086806600004,
+      "binMove": 13.114841341972351,
+      "meanDt": 16.66633333333333,
+      "drawCalls": 21,
+      "triangles": 254206
+    },
+    {
+      "frames": 301,
+      "fps": 60.001993421708356,
+      "p95": 16.700000000000728,
+      "max": 16.80000000000109,
+      "robot": true,
+      "count": 100,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.03760051727294922,
+      "totalMove": 157.54406908025308,
+      "binMove": 28.16208255290985,
+      "meanDt": 16.666112956810633,
+      "drawCalls": 21,
+      "triangles": 463966
+    },
+    {
+      "frames": 300,
+      "fps": 60.001200024000504,
+      "p95": 16.700000000000728,
+      "max": 16.80000000000291,
+      "robot": true,
+      "count": 300,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.037200927734375,
+      "totalMove": 211.1189502557804,
+      "binMove": 25.723750591278076,
+      "meanDt": 16.666333333333327,
+      "drawCalls": 21,
+      "triangles": 988366
+    }
+  ],
+  "layouts": [
+    {
+      "preset": "dense",
+      "columns": 80,
+      "levels": 4,
+      "stations": 4,
+      "frames": 300,
+      "fps": 60.00240009600389,
+      "p95": 16.700000000004366,
+      "max": 16.80000000000291,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.03979969024658203,
+      "totalMove": 32.215460476962974,
+      "binMove": 3.434899926185608,
+      "meanDt": 16.665999999999986,
+      "drawCalls": 21,
+      "triangles": 551038
+    },
+    {
+      "preset": "large",
+      "columns": 120,
+      "levels": 6,
+      "stations": 6,
+      "frames": 300,
+      "fps": 60.002400096003804,
+      "p95": 16.700000000004366,
+      "max": 16.80000000000291,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.03880023956298828,
+      "totalMove": 34.948071881115794,
+      "binMove": 14.115789890289307,
+      "meanDt": 16.66600000000001,
+      "drawCalls": 21,
+      "triangles": 1074894
+    }
+  ],
+  "geometry": {
+    "robotFloor": 0.0060000091791153065,
+    "supportTop": 0.42750000655651094,
+    "binBottom": 0.4275000035762787,
+    "robotParts": 5,
+    "binParts": 3
+  },
+  "resourceCounts": [
+    17,
+    17,
+    17,
+    17,
+    17
+  ],
+  "textureCounts": [
+    7,
+    7,
+    7,
+    7,
+    7
+  ],
+  "additional": {
+    "editor": [
+      "champs vides/hors limite/fractionnaires refusés",
+      "50 annulations avec assertions du brouillon après chaque action",
+      "dernier rack/station protégés, bornes du curseur et placement Espace",
+      "application pendant la lecture conserve la lecture"
+    ],
+    "speeds": [
+      {
+        "speed": 1,
+        "ticks": 5,
+        "seconds": 0.5113000000715255
+      },
+      {
+        "speed": 2,
+        "ticks": 10,
+        "seconds": 0.5091999999284744
+      },
+      {
+        "speed": 5,
+        "ticks": 25,
+        "seconds": 0.5022000000476837
+      },
+      {
+        "speed": 10,
+        "ticks": 52,
+        "seconds": 0.511
+      }
+    ],
+    "stress": [
+      {
+        "preset": "dense",
+        "bins": 320,
+        "frames": 300,
+        "fps": 60.00240009600385,
+        "p95": 16.799999999999272,
+        "max": 16.80000000000291,
+        "robot": true,
+        "count": 220,
+        "instanced": true,
+        "still": 0,
+        "maxMove": 0.03780078887939453,
+        "totalMove": 163.445037972587,
+        "binMove": 19.43105983734131,
+        "meanDt": 16.665999999999997,
+        "drawCalls": 21,
+        "triangles": 1075438
+      },
+      {
+        "preset": "large",
+        "bins": 720,
+        "frames": 300,
+        "fps": 60.002400096003804,
+        "p95": 16.799999999999272,
+        "max": 16.80000000000291,
+        "robot": true,
+        "count": 300,
+        "instanced": true,
+        "still": 0,
+        "maxMove": 0.06960105895996094,
+        "totalMove": 186.68783934817364,
+        "binMove": 23.107060253620148,
+        "meanDt": 16.66600000000001,
+        "drawCalls": 21,
+        "triangles": 1809054
+      },
+      {
+        "preset": "maximum",
+        "bins": 1920,
+        "frames": 213,
+        "fps": 42.60170406816273,
+        "p95": 33.400000000001455,
+        "max": 99.90000000000146,
+        "robot": true,
+        "count": 300,
+        "instanced": true,
+        "still": 0,
+        "maxMove": 0.2034001350402832,
+        "totalMove": 83.4913402923708,
+        "binMove": 18.42896258831024,
+        "meanDt": 23.473239436619714,
+        "drawCalls": 21,
+        "triangles": 3380622
+      }
+    ],
+    "touch": [
+      {
+        "width": 360,
+        "height": 640
+      },
+      {
+        "width": 844,
+        "height": 390
+      },
+      {
+        "width": 768,
+        "height": 1024
+      }
+    ],
+    "browsers": [
+      {
+        "name": "Edge",
+        "version": "155.0.4283.45",
+        "cycle": true,
+        "pause": true,
+        "seedAndPlanRestored": true
+      },
+      {
+        "name": "Firefox",
+        "version": "157.0",
+        "cycle": true,
+        "pause": true,
+        "seedAndPlanRestored": true
+      }
+    ],
+    "camera": true
+  },
+  "scenario": {
+    "transfer": {
+      "robot": 12,
+      "bin": 12,
+      "level": 1,
+      "progress": 1,
+      "robotY": 1.600000023841858,
+      "binY": 2.049999952316284,
+      "columns": 32,
+      "bins": 128
+    },
+    "completed": 1
+  },
+  "congestion": {
+    "tick": 1505,
+    "robots": 100,
+    "lostSteps": 124638,
+    "freeSteps": 11010,
+    "nonzero": 129,
+    "max": 1503,
+    "top": 984,
+    "layerY": 0.004,
+    "top3d": [
+      253,
+      231,
+      37
+    ],
+    "top2d": [
+      253,
+      231,
+      37
+    ]
+  },
+  "errors": []
+}
