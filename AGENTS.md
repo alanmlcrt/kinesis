@@ -8,6 +8,22 @@ Un seul contrat pour les deux.
 Kinesis : un studio 3D dans le navigateur pour comprendre et optimiser un entrepôt
 robotisé. Périmètre : `docs/SCOPE.md`. Étape en cours : `docs/ROADMAP.md`.
 
+## Début et fin de session (obligatoire, Claude et Codex)
+
+Claude et Codex travaillent sur le même dépôt, chacun à son tour. Fichiers de suivi
+communs : ce fichier, `docs/ROADMAP.md`, `docs/JOURNAL.md`, `docs/SCOPE.md`,
+`docs/VERIFICATION.md`.
+
+En début de session, avant toute autre action :
+1. Lire `docs/ROADMAP.md` (étape en cours) et `docs/JOURNAL.md` depuis le haut, au moins
+   jusqu'à la dernière entrée de l'autre agent.
+2. `git status` et `git log --oneline -10` : travail non commité ou commité par l'autre.
+3. Lire `docs/SCOPE.md` et `docs/VERIFICATION.md` avant de modifier le comportement.
+4. Dire dans la première réponse ce qui a changé depuis la dernière session.
+
+En fin de session, avant de rendre la main : entrée en tête de `docs/JOURNAL.md`, signée
+(`- AAAA-MM-JJ — Claude — …` ou `— Codex — …`), et feuille de route à jour.
+
 ## Technologies
 
 - **React + React Three Fiber + drei**, TypeScript strict, Vite.
