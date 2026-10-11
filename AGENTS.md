@@ -77,6 +77,19 @@ rapport.
 - N'inventer aucun chiffre, aucune performance, aucune référence.
 - Un manque ou une contradiction dans `SCOPE.md` se signale à l'utilisateur.
 
+## Dépôt
+
+- Documents du projet uniquement dans `docs/`. À la racine : `AGENTS.md`, `CLAUDE.md`,
+  `README.md` seulement, jamais de copie d'un document de `docs/`.
+- Skills : seule copie versionnée dans `.agents/skills/`. `.claude/skills` est une jonction
+  locale, créée avec le hook de commit par `npm install` dans `web/`
+  (ou `node scripts/repo.mjs --setup`).
+- Le hook `pre-commit` lance `scripts/repo.mjs`, `npm test` et `npm run build`. Ne jamais
+  le contourner (`--no-verify`). Avant de commiter un changement de comportement :
+  `npm run verify` complet.
+- En cochant une étape, relire toute `docs/ROADMAP.md` et mettre à jour chaque mention
+  devenue fausse (« reste à réaliser », ordre des étapes).
+
 ## Sorties shell
 
 Claude passe par `rtk` automatiquement (hook). Codex préfixe les commandes bavardes :

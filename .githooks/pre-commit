@@ -1,0 +1,7 @@
+#!/bin/sh
+# Aucun commit sans dépôt cohérent, tests et build qui passent (contrôle navigateur : npm run verify).
+set -e
+node scripts/repo.mjs
+cd web
+npm test --silent
+npm run build --silent

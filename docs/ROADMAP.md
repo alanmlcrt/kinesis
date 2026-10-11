@@ -3,8 +3,7 @@
 Une étape à la fois. Une étape n'est cochée que si son critère « fini quand » est vérifié
 dans le navigateur (`npm run check`) et rapporté. Les cadences sont mesurées, jamais estimées.
 
-Ordre adapté à la demande du 10 octobre 2026 : étape 5 avant l'étape 4,
-qui reste à réaliser.
+Ordre adapté à la demande du 10 octobre 2026 : étape 5 réalisée avant l'étape 4.
 
 - [x] **0. La scène.** Projet Vite + React + TypeScript + React Three Fiber + drei dans `web/`.
   Un sol en grille, une lumière douce, une caméra orbitale. Script `npm run check`
