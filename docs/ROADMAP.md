@@ -49,9 +49,25 @@ Ordre adapté à la demande du 10 octobre 2026 : étape 5 réalisée avant l'ét
   intervalle de confiance, chauffe écartée, export + manifeste. Calcul hors du fil
   d'affichage (Web Worker) pour que l'interface ne gèle pas.
 
-- [ ] **7. Comparer.** Deux ou trois configurations, même protocole, même base de
-  normalisation, courbes superposées. Ajouter à cette étape la variante Skypod classique
-  pour comparer les générations dans le même moteur, avec leurs hypothèses explicites.
+- [ ] **7. Comparer.** Découpage validé par l'utilisateur le 11 octobre 2026. Objectif :
+  stocker un maximum en sacrifiant un minimum de sol à la circulation, sans casser le débit
+  (front de Pareto). Même protocole pour toutes les configurations, base de normalisation
+  choisie par l'utilisateur, « solveur non validé » jusqu'à l'étape 9. Robots en cycle
+  continu (mesure de saturation) pendant toute l'étape ; demande et affectation hors périmètre.
+  - [x] **7a. Comparer des configurations.** Plans nommés et sauvegardés, même campagne sur
+    2 ou 3 configurations, base choisie (capacité égale, emprise égale, Pareto) et vérifiée,
+    courbes superposées, export multi-configuration.
+  - [ ] **7b. Plans par allées.** Générateur paramétré (nombre et largeur des allées,
+    rangées adossées, allées transversales, position des stations) ; capacité, emprise et
+    part du sol en circulation ; plans à colonne ou station inaccessible refusés.
+  - [ ] **7c. Génération classique.** Variante sans passage sous les racks (emprise des
+    rangées bloquée, accès par l'allée), hypothèse documentée dans `docs/SKYPOD.md`.
+  - [ ] **7d. Exploration densité/débit.** Balayage d'une famille de plans à emprise égale,
+    Workers en parallèle, front de Pareto capacité/débit, seuil de saturation par plan
+    (défini d'abord dans `experiment-protocol`).
+  - [ ] **7e. Méthodes de pilotage.** Pilotage séparé du moteur ; réservation espace-temps à
+    fenêtre glissante, recalculée en continu, comparée à la méthode actuelle. Budget de calcul
+    en nombre d'opérations (reproductible), temps de calcul réel mesuré à côté.
 
 - [ ] **8. Ascenseurs et AutoStore**, ajoutés comme profils du même moteur.
 

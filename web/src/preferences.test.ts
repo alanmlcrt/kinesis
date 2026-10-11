@@ -1,6 +1,6 @@
 import test, { type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { CONFIGURATION_KEY, loadConfiguration, saveConfiguration } from './preferences.ts'
+import { CONFIGURATION_KEY, loadConfiguration, loadPlans, PLANS_KEY, saveConfiguration, savePlans } from './preferences.ts'
 import { DEFAULT_LAYOUT, PRESETS, type Configuration } from './sim/layout.ts'
 
 function storage(t: TestContext) {
@@ -58,4 +58,22 @@ test('écriture refusée ou configuration invalide : avertissement sans perte de
   fake.setItem = () => { throw new Error('QuotaExceededError') }
   assert.match(saveConfiguration({ ...valid, count: 100 }), /échoué/)
   assert.equal(values.get(CONFIGURATION_KEY), saved)
+})
+
+test('plans nommés : aller-retour, entrées invalides ignorées, stockage refusé', (t) => {
+  const { values, fake } = storage(t)
+  assert.deepEqual(loadPlans(), { plans: [], warning: '' })
+  const plans = [{ name: 'A', layout: structuredClone(PRESETS.dense) }, { name: 'B', layout: structuredClone(DEFAULT_LAYOUT) }]
+  assert.equal(savePlans(plans), '')
+  assert.deepEqual(loadPlans(), { plans, warning: '' })
+  values.set(PLANS_KEY, JSON.stringify([...plans, { name: 'A', layout: DEFAULT_LAYOUT }, { name: 'C', layout: { width: 3 } }, { name: '', layout: DEFAULT_LAYOUT }]))
+  const partial = loadPlans()
+  assert.deepEqual(partial.plans.map((p) => p.name), ['A', 'B'])
+  assert.match(partial.warning, /illisibles/)
+  values.set(PLANS_KEY, '{oops')
+  assert.deepEqual(loadPlans().plans, [])
+  fake.setItem = () => { throw new Error('quota') }
+  assert.match(savePlans(plans), /échoué/)
+  assert.equal(values.get(PLANS_KEY), '{oops', 'sauvegarde existante écrasée')
+  assert.throws(() => JSON.parse(values.get(PLANS_KEY)!))
 })

@@ -39,6 +39,16 @@ précision.
   à la case de départ. La cadence d'essai normale (un essai tous les 10 pas) n'est pas
   comptée tant qu'aucun refus n'a eu lieu. Total rapporté aux trajets libres terminés.
 - **Débit** : tâches terminées par unité de temps simulé, après la chauffe.
+- **Emplacements** : travées × niveaux (capacité de stockage). **Emprise** : largeur × profondeur
+  du sol, en cases de simulation (non calibrées en mètres).
+- **Débit maximal mesuré** d'une configuration : la plus haute moyenne de débit parmi ses
+  flottes à chauffe détectée, donnée avec l'intervalle de cette flotte. Biaisée vers le haut
+  (maximum de moyennes bruitées) : à lire avec son intervalle.
+- **Front de Pareto** (étape 7a) : configurations qu'aucune autre ne bat ou n'égale à la fois
+  en emplacements (plus), emprise (moins) et débit maximal mesuré (plus), avec au moins un
+  critère strictement meilleur. Sans débit mesuré : hors front.
+- Comparaison : mêmes graines pour toutes les configurations (nombres aléatoires communs),
+  3 configurations au plus (au-delà, les couleurs des courbes ne sont plus distinguables).
 - Toute nouvelle mesure reçoit une définition écrite ici avant d'être affichée.
 
 ## Comparer

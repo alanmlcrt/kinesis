@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { analyzeFleet, interval, mser5, replicationSeeds, runReplication, validateCampaign, WINDOW_STEPS } from './campaign.ts'
+import { analyzeFleet, interval, mser5, pareto, peak, replicationSeeds, runReplication, validateCampaign, WINDOW_STEPS, type FleetResult } from './campaign.ts'
 import { createSim, step } from './sim.ts'
-import { DEFAULT_LAYOUT } from './layout.ts'
+import { DEFAULT_LAYOUT, PRESETS } from './layout.ts'
 
 test('graines de réplication : déterministes, distinctes, 32 bits, propres à la graine de campagne', () => {
   const a = replicationSeeds(1, 30)
@@ -47,8 +47,8 @@ test('réplication : déterministe et identique au moteur pas à pas', () => {
 test('analyse d’une flotte : chauffe commune la plus longue, débit et ratio après chauffe', () => {
   const steady = Array.from({ length: 100 }, (_, i) => 1 + i % 2)
   const reps = [
-    { fleet: 4, seed: 1, served: [...Array(10).fill(0), ...steady], lost: Array(110).fill(2), free: Array(110).fill(4) },
-    { fleet: 4, seed: 2, served: [...Array(20).fill(0), ...steady.slice(10)], lost: Array(110).fill(1), free: Array(110).fill(4) },
+    { configuration: 0, fleet: 4, seed: 1, served: [...Array(10).fill(0), ...steady], lost: Array(110).fill(2), free: Array(110).fill(4) },
+    { configuration: 0, fleet: 4, seed: 2, served: [...Array(20).fill(0), ...steady.slice(10)], lost: Array(110).fill(1), free: Array(110).fill(4) },
   ]
   const r = analyzeFleet(reps)
   assert.deepEqual(r.replicationWarmupSeconds, [100, 200])
@@ -60,11 +60,38 @@ test('analyse d’une flotte : chauffe commune la plus longue, débit et ratio a
   assert.equal(r.meanThroughput.half, 0)
 })
 
+const demo = { name: 'Démo', layout: DEFAULT_LAYOUT }, dense = { name: 'Compact', layout: PRESETS.dense }
+const large = { name: 'Étendu', layout: PRESETS.large }
+
 test('paramètres de campagne refusés', () => {
-  const ok = { layout: DEFAULT_LAYOUT, fleets: [20, 50], replications: 5, seconds: 3600, seed: 1 }
+  const ok = { configurations: [demo], base: null, fleets: [20, 50], replications: 5, seconds: 3600, seed: 1 }
   validateCampaign(ok)
   for (const bad of [{ fleets: [] }, { fleets: [20, 20] }, { fleets: [0] }, { fleets: [100000] }, { replications: 1 },
-    { replications: 31 }, { replications: 2.5 }, { seconds: 100 }, { seconds: 1e6 }, { seed: -1 }]) {
-    assert.throws(() => validateCampaign({ ...ok, ...bad }), RangeError, JSON.stringify(bad))
+    { replications: 31 }, { replications: 2.5 }, { seconds: 100 }, { seconds: 1e6 }, { seed: -1 },
+    { configurations: [] }, { configurations: [demo, dense, large, { ...demo, name: 'D' }], base: 'pareto' },
+    { base: 'pareto' }, { configurations: [demo, { ...demo }], base: 'pareto' }, { configurations: [demo, { ...dense, name: ' ' }], base: 'pareto' }]) {
+    assert.throws(() => validateCampaign({ ...ok, ...bad } as never), RangeError, JSON.stringify(bad).slice(0, 80))
   }
+})
+
+test('base de normalisation : obligatoire pour comparer, vérifiée sur les plans', () => {
+  const p = { fleets: [20], replications: 2, seconds: 3600, seed: 1 }
+  assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: null }), /base de normalisation/)
+  // Démo et Compact : même emprise 48 × 32, capacités 128 et 320 emplacements.
+  validateCampaign({ ...p, configurations: [demo, dense], base: 'footprint' })
+  assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: 'capacity' }), /Démo 128, Compact 320/)
+  assert.throws(() => validateCampaign({ ...p, configurations: [demo, large], base: 'footprint' }), /Emprises différentes/)
+  validateCampaign({ ...p, configurations: [demo, dense, large], base: 'pareto' })
+  validateCampaign({ ...p, configurations: [demo, { name: 'Démo bis', layout: { ...DEFAULT_LAYOUT, fill: 50 } }], base: 'capacity' })
+  assert.throws(() => validateCampaign({ ...p, fleets: [300], configurations: [demo, dense], base: 'footprint' }), /^RangeError: (Démo|Compact) :/)
+})
+
+test('front de Pareto et débit maximal mesuré', () => {
+  assert.deepEqual(pareto([
+    { slots: 128, area: 1536, throughput: 400 }, { slots: 320, area: 1536, throughput: 380 },
+    { slots: 128, area: 1536, throughput: 300 }, { slots: 720, area: 2560, throughput: NaN }, { slots: 320, area: 2560, throughput: 380 },
+  ]), [true, true, false, false, false])
+  const r = (fleet: number, mean: number, detected = true) => ({ fleet, detected, meanThroughput: { mean, half: 1 } }) as FleetResult
+  assert.equal(peak([r(10, 100), r(50, 300), r(100, 500, false), r(150, 280)])!.fleet, 50)
+  assert.equal(peak([r(10, 100, false)]), undefined)
 })

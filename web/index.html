@@ -16,6 +16,8 @@
         --accent: #6cb4ff;
         --error: #f1ba93;
         --rack: #8996a5;
+        /* Séries comparées : 3 au plus, validées daltonisme et contraste sur #16191e (skill dataviz). */
+        --series-0: #3987e5; --series-1: #d95926; --series-2: #199e70;
         font: 13px/1.4 system-ui, sans-serif;
         font-variant-numeric: tabular-nums;
         color: var(--text);
@@ -91,10 +93,21 @@
       .chart { display: block; width: 100%; max-width: 460px; margin: 8px 0; font-size: 13px; }
       .chart text { fill: var(--muted); }
       .chart .grid { stroke: var(--line); stroke-width: 1; }
-      .chart .series { fill: none; stroke: var(--accent); stroke-width: 2; }
-      .chart .point line { stroke: var(--text); stroke-width: 1.5; }
-      .chart .point circle { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
-      .chart .point:hover circle { r: 6; }
+      .s0 { --series: var(--series-0); } .s1 { --series: var(--series-1); } .s2 { --series: var(--series-2); }
+      .chart .series { fill: none; stroke: var(--series); stroke-width: 2; }
+      .chart .point line { stroke: var(--series); stroke-width: 1.5; }
+      .chart .point :is(circle, rect:not([fill]), polygon), .legend-list svg * { fill: var(--series); stroke: var(--bg); stroke-width: 1.5; }
+      .chart .point:hover :is(circle, polygon) { stroke: var(--text); }
+      .legend-list { display: flex; flex-wrap: wrap; gap: 16px; list-style: none; padding: 0; margin: 8px 0 0; }
+      .legend-list li { display: flex; align-items: center; gap: 6px; }
+      .plans { list-style: none; padding: 0; margin: 0; }
+      .plans li { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 44px; }
+      .plans label, .choice { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+      .plans input, .choice input { width: 20px; min-width: 20px; min-height: 20px; margin: 0; }
+      .campaign-body fieldset { margin: 0 0 12px; }
+      .save-plan label { width: min(240px, 100%); }
+      .table-scroll { overflow-x: auto; }
+      .table-scroll th, .table-scroll td { white-space: nowrap; }
       table { border-collapse: collapse; margin-top: 8px; }
       th, td { padding: 6px 12px; text-align: right; border-bottom: 1px solid var(--line); }
       thead th { color: var(--muted); font-weight: 400; }

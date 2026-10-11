@@ -76,6 +76,19 @@ Cela n'ajoute pas de dépendance npm au projet. Les versions effectivement test�
 | Export : graines, commit, mentions ; Worker et Node identiques ; résultats recalculés | `check.mjs` |
 | Tableau = export, focus rendu à « Mesurer », pas de débordement mobile | `check.mjs` |
 
+## Comparaison de configurations (étape 7a)
+
+| Comportement | Contrôle |
+|---|---|
+| 1 à 3 configurations, noms uniques, base absente pour une seule | `campaign.test.ts`, `check.mjs` |
+| Base obligatoire dès deux configurations ; capacité/emprise vérifiées sur les plans | `campaign.test.ts`, `check.mjs` (messages avec les valeurs) |
+| Flotte hors capacité d'une configuration : refus nommant la configuration | `campaign.test.ts` |
+| Front de Pareto, débit maximal mesuré | `campaign.test.ts`, recalcul de l'export dans `check.mjs` |
+| Plans nommés : aller-retour, entrées invalides ignorées, stockage refusé sans écrasement | `preferences.test.ts` |
+| Nom en double refusé, 4e configuration désactivée, suppression avec focus conservé | `check.mjs` |
+| Export multi-configuration recalculable, mêmes graines pour toutes | `check.mjs` |
+| Trois séries distinguables (couleur validée + forme), légende | `check.mjs`, captures inspectées |
+
 ## Limites à conserver dans les rapports
 
 Le contexte tactile et les tailles de fenêtre simulent des appareils : ils ne valident

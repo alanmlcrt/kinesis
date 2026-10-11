@@ -1,26 +1,47 @@
 // Campagne de mesure (protocole : .agents/skills/experiment-protocol). TypeScript pur, exécuté dans un Worker.
 import { createSim, DT, step } from './sim.ts'
-import { validateFleet, validateLayout, validateSeed, type Layout } from './layout.ts'
+import { footprint, storageSlots, validateFleet, validateLayout, validateSeed, type Layout } from './layout.ts'
 
 export const WINDOW_STEPS = 100 // fenêtre d'observation : 10 s simulées
 export const BATCH = 5 // MSER-5 : moyennes de lots de 5 fenêtres
 
-export type CampaignParams = { layout: Layout; fleets: number[]; replications: number; seconds: number; seed: number }
+export type Base = 'capacity' | 'footprint' | 'pareto'
+export type Configuration = { name: string; layout: Layout }
+// base : choisie par l'utilisateur dès deux configurations, jamais par défaut ; null pour une seule.
+export type CampaignParams = { configurations: Configuration[]; base: Base | null; fleets: number[]; replications: number; seconds: number; seed: number }
 // Séries par fenêtre (incréments) : assez pour refaire tout le calcul depuis l'export.
-export type Replication = { fleet: number; seed: number; served: number[]; lost: number[]; free: number[] }
+export type Replication = { configuration: number; fleet: number; seed: number; served: number[]; lost: number[]; free: number[] }
 export type Interval = { mean: number; half: number }
 export type FleetResult = {
-  fleet: number; warmupSeconds: number; detected: boolean
+  configuration: number; fleet: number; warmupSeconds: number; detected: boolean
   replicationWarmupSeconds: number[]; throughput: number[]; lostRatio: number[]
   meanThroughput: Interval; meanLostRatio: Interval
 }
 
 export function validateCampaign(p: CampaignParams): void {
-  const capacity = validateLayout(p.layout)
+  const configs = p.configurations
+  // Trois au plus : au-delà, les couleurs des courbes ne restent pas distinguables (palette validée).
+  if (!Array.isArray(configs) || configs.length < 1 || configs.length > 3) throw new RangeError('Choisir 1 à 3 configurations.')
+  const names = configs.map((c) => typeof c.name === 'string' ? c.name.trim() : '')
+  if (names.some((n) => !n || n.length > 40) || new Set(names).size !== names.length) throw new RangeError('Noms de configuration vides, trop longs ou en double.')
+  const capacities = configs.map((c) => validateLayout(c.layout))
   validateSeed(p.seed)
+  if (configs.length === 1 && p.base !== null) throw new RangeError('Une seule configuration : aucune base de normalisation.')
+  if (configs.length > 1) {
+    if (!['capacity', 'footprint', 'pareto'].includes(p.base as string)) throw new RangeError('Choisir une base de normalisation pour comparer.')
+    const list = (f: (l: Layout) => number) => configs.map((c, i) => `${names[i]} ${f(c.layout)}`).join(', ')
+    if (p.base === 'capacity' && new Set(configs.map((c) => storageSlots(c.layout))).size > 1) {
+      throw new RangeError(`Capacités différentes (${list(storageSlots)} emplacements) : choisir une autre base ou d’autres plans.`)
+    }
+    if (p.base === 'footprint' && new Set(configs.map((c) => footprint(c.layout))).size > 1) {
+      throw new RangeError(`Emprises différentes (${list(footprint)} cases) : choisir une autre base ou d’autres plans.`)
+    }
+  }
   if (!Array.isArray(p.fleets) || p.fleets.length < 1 || p.fleets.length > 12) throw new RangeError('Choisir 1 à 12 tailles de flotte.')
   if (new Set(p.fleets).size !== p.fleets.length) throw new RangeError('Tailles de flotte en double.')
-  for (const n of p.fleets) validateFleet(n, capacity)
+  for (const n of p.fleets) capacities.forEach((capacity, i) => {
+    try { validateFleet(n, capacity) } catch (e) { throw new RangeError(`${names[i]} : ${(e as Error).message}`) }
+  })
   if (!Number.isInteger(p.replications) || p.replications < 2 || p.replications > 30) throw new RangeError('Choisir 2 à 30 réplications.')
   // Au moins 4 lots MSER après une troncature maximale de la moitié de la série.
   const minimum = 8 * BATCH * WINDOW_STEPS * DT
@@ -41,8 +62,8 @@ export function replicationSeeds(seed: number, count: number): number[] {
   return seeds
 }
 
-export function runReplication(layout: Layout, fleet: number, seed: number, seconds: number): Replication {
-  const s = createSim(seed, fleet, layout), out: Replication = { fleet, seed, served: [], lost: [], free: [] }
+export function runReplication(layout: Layout, fleet: number, seed: number, seconds: number, configuration = 0): Replication {
+  const s = createSim(seed, fleet, layout), out: Replication = { configuration, fleet, seed, served: [], lost: [], free: [] }
   const windows = Math.floor(seconds / (WINDOW_STEPS * DT))
   let served = 0, lost = 0, free = 0
   for (let w = 0; w < windows; w++) {
@@ -98,7 +119,22 @@ export function analyzeFleet(reps: Replication[]): FleetResult {
   const start = Math.max(...cuts.map((c) => c.windows))
   const throughput = reps.map((r) => sum(r.served, start) / ((r.served.length - start) * window) * 3600)
   const lostRatio = reps.map((r) => { const free = sum(r.free, start); return free ? sum(r.lost, start) / free : NaN }) // aucun trajet terminé : indéfini, pas 0
-  return { fleet: reps[0].fleet, warmupSeconds: start * window, detected: cuts.every((c) => c.detected),
+  return { configuration: reps[0].configuration, fleet: reps[0].fleet, warmupSeconds: start * window, detected: cuts.every((c) => c.detected),
     replicationWarmupSeconds: cuts.map((c) => c.windows * window), throughput, lostRatio,
     meanThroughput: interval(throughput), meanLostRatio: interval(lostRatio) }
+}
+
+// Débit maximal mesuré d'une configuration : la plus haute moyenne parmi ses flottes à chauffe détectée.
+// Le maximum de moyennes bruitées est biaisé vers le haut : l'intervalle de cette flotte l'accompagne.
+export function peak(results: FleetResult[]): FleetResult | undefined {
+  let best: FleetResult | undefined
+  for (const r of results) if (r.detected && (!best || r.meanThroughput.mean > best.meanThroughput.mean)) best = r
+  return best
+}
+
+// Front de Pareto : plus d'emplacements, moins d'emprise, plus de débit. Sans débit mesuré : hors front.
+export function pareto(points: { slots: number; area: number; throughput: number }[]): boolean[] {
+  return points.map((a, i) => Number.isFinite(a.throughput) && !points.some((b, j) => j !== i && Number.isFinite(b.throughput) &&
+    b.slots >= a.slots && b.area <= a.area && b.throughput >= a.throughput &&
+    (b.slots > a.slots || b.area < a.area || b.throughput > a.throughput)))
 }

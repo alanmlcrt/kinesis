@@ -99,11 +99,19 @@ export function parseConfiguration(value: unknown): Configuration {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new RangeError('Configuration sauvegardée invalide.')
   const data = value as Record<string, unknown>
   if (data.version !== 1) throw new RangeError('Version de configuration non prise en charge.')
-  const plan = data.layout as Layout
-  const capacity = validateLayout(plan)
-  validateSeed(data.seed as number); validateFleet(data.count as number, capacity)
-  // Ne conserver que les données connues, jamais les autres propriétés d'un JSON reçu.
-  return { version: 1, seed: data.seed as number, count: data.count as number,
-    layout: { width: plan.width, depth: plan.depth, levels: plan.levels, fill: plan.fill, storage: plan.storage,
-      racks: plan.racks.map(({ x, z }) => ({ x, z })), stations: plan.stations.map(({ x, z }) => ({ x, z })) } }
+  const layout = parseLayout(data.layout)
+  validateSeed(data.seed as number); validateFleet(data.count as number, validateLayout(layout))
+  return { version: 1, seed: data.seed as number, count: data.count as number, layout }
 }
+
+// Ne conserver que les données connues, jamais les autres propriétés d'un JSON reçu.
+export function parseLayout(value: unknown): Layout {
+  const plan = value as Layout
+  validateLayout(plan)
+  return { width: plan.width, depth: plan.depth, levels: plan.levels, fill: plan.fill, storage: plan.storage,
+    racks: plan.racks.map(({ x, z }) => ({ x, z })), stations: plan.stations.map(({ x, z }) => ({ x, z })) }
+}
+
+// Bases de normalisation : emplacements de stockage (travées × niveaux) et emprise au sol (cases).
+export const storageSlots = (layout: Layout) => layout.racks.length * layout.levels
+export const footprint = (layout: Layout) => layout.width * layout.depth

@@ -6,12 +6,14 @@ self.onmessage = (e: MessageEvent<CampaignParams>) => {
   try {
     validateCampaign(p)
     const seeds = replicationSeeds(p.seed, p.replications), replications: Replication[] = []
-    const total = p.fleets.length * seeds.length
-    for (const fleet of p.fleets) for (const seed of seeds) {
-      replications.push(runReplication(p.layout, fleet, seed, p.seconds))
+    // Mêmes graines pour toutes les configurations et flottes (nombres aléatoires communs).
+    const total = p.configurations.length * p.fleets.length * seeds.length
+    p.configurations.forEach((c, i) => { for (const fleet of p.fleets) for (const seed of seeds) {
+      replications.push(runReplication(c.layout, fleet, seed, p.seconds, i))
       self.postMessage({ type: 'progress', done: replications.length, total })
-    }
-    const results = p.fleets.map((fleet) => analyzeFleet(replications.filter((r) => r.fleet === fleet)))
+    } })
+    const results = p.configurations.flatMap((_, i) => p.fleets.map((fleet) =>
+      analyzeFleet(replications.filter((r) => r.configuration === i && r.fleet === fleet))))
     self.postMessage({ type: 'done', seeds, replications, results })
   } catch (error) {
     self.postMessage({ type: 'error', message: (error as Error).message })
