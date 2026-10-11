@@ -60,6 +60,22 @@ Cela n'ajoute pas de dépendance npm au projet. Les versions effectivement test�
 | Panneau replié par défaut sur téléphone, déplié dans l'écran sans chevaucher les commandes | `check.mjs`, 390×844 |
 | Régression : le choix de flotte au clavier ne déplace plus le focus ni n'ouvre l'éditeur | `check.mjs` |
 
+## Campagne de mesure (étape 6)
+
+| Comportement | Contrôle |
+|---|---|
+| Graines de réplication déterministes, distinctes, 32 bits | `campaign.test.ts` |
+| MSER-5 : transitoire écarté, stationnaire intact, dérive non détectée | `campaign.test.ts` |
+| Régression : pas de troncature en fin de série sur deux lots égaux | `campaign.test.ts` |
+| IC 95 % Student (R = 2 et 5, valeurs calculées à la main) | `campaign.test.ts` |
+| Réplication déterministe et identique au moteur pas à pas | `campaign.test.ts` |
+| Chauffe commune, débit et ratio après chauffe | `campaign.test.ts`, séries synthétiques |
+| Paramètres refusés (flottes vides/en double/hors capacité, R, durée, graine) | `campaign.test.ts`, `check.mjs` |
+| Annulation sans résultat partiel | `check.mjs` |
+| Scène fluide pendant un calcul qui avance réellement | `check.mjs` (p95 et progression mesurées) |
+| Export : graines, commit, mentions ; Worker et Node identiques ; résultats recalculés | `check.mjs` |
+| Tableau = export, focus rendu à « Mesurer », pas de débordement mobile | `check.mjs` |
+
 ## Limites à conserver dans les rapports
 
 Le contexte tactile et les tailles de fenêtre simulent des appareils : ils ne valident
@@ -69,8 +85,8 @@ pas un audit de lecteur d'écran. Les tests couvrent les scénarios indiqués, p
 les combinaisons possibles. Les cadences sont des observations sur cette machine, un
 seul run par cas, sans conclusion scientifique sur le trafic industriel.
 
-Dernier passage du 10 octobre 2026 : `npm run verify` réussit, 28 tests unitaires,
-tous les scénarios navigateur (dont le temps perdu) et 0 erreur console. Compact à 220
+Dernier passage du 10 octobre 2026 : `npm run verify` réussit, 34 tests unitaires,
+tous les scénarios navigateur (dont le temps perdu et la campagne) et 0 erreur console. Compact à 220
 robots et étendu à 300 robots : 60,0 images/s ; maximal à 300 robots/1920 bacs :
-42,6 images/s, p95 33,4 ms, un pic à 99,9 ms (Iris Xe/ANGLE D3D11, 1280×800, graine 1, vitesse 1×, 5 s, un seul run par cas).
+43,1 images/s, p95 et max 33,4 ms (Iris Xe/ANGLE D3D11, 1280×800, graine 1, vitesse 1×, 5 s, un seul run par cas).
 Le contrôle `adb devices -l` ne trouve aucun appareil physique connecté.

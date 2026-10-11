@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import assert from 'node:assert/strict'
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { checkRemaining } from './remaining.mjs'
 
 const SECONDS = 5
@@ -517,15 +517,75 @@ try {
     }
     await probe.close()
   }
+  // Étape 6 : campagne dans un Worker, export recalculé ici (Node) avec le même module pur.
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.getByRole('button', { name: 'Mesurer', exact: true }).click()
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'campaign-title')
+  const dialog = page.locator('section[aria-labelledby="campaign-title"]')
+  const fill = async (values) => { for (const [name, value] of Object.entries(values)) await dialog.locator(`input[name="${name}"]`).fill(value) }
+  for (const [values, message] of [[{ fleets: '0' }, 'robot'], [{ fleets: '20, 20' }, 'double'], [{ fleets: '20', replications: '1' }, '2 à 30'],
+    [{ replications: '3', seconds: '10' }, 'durée'], [{ seconds: '1200', seed: '-4' }, 'raine']]) {
+    await fill(values)
+    await dialog.getByRole('button', { name: 'Lancer la campagne' }).click()
+    await dialog.getByRole('alert').filter({ hasText: message }).waitFor()
+  }
+  // Annulation : aucun résultat partiel affiché.
+  await fill({ fleets: '300', replications: '30', seconds: '86400', seed: '5' })
+  await dialog.getByRole('button', { name: 'Lancer la campagne' }).click()
+  await dialog.getByRole('status').filter({ hasText: 'réplications' }).waitFor()
+  await dialog.getByRole('button', { name: 'Annuler' }).click()
+  assert.equal(await dialog.locator('table').count(), 0, 'résultat affiché après annulation')
+  // Fluidité de la scène pendant un calcul long (le Worker ne bloque pas le fil d'affichage).
+  await fill({ fleets: '100, 300', replications: '5', seconds: '7200' })
+  await dialog.getByRole('button', { name: 'Lancer la campagne' }).click()
+  const progressed = () => dialog.locator('progress').evaluate((p) => p.value)
+  await dialog.locator('progress').waitFor()
+  const before = await progressed()
+  const during = await measure(2)
+  // Le calcul doit réellement avancer pendant la mesure : sinon la fluidité ne prouve rien.
+  assert.ok(await dialog.getByRole('status').count() === 1, 'campagne terminée avant la mesure de fluidité')
+  assert.ok(await progressed() > before, 'aucune réplication calculée pendant la mesure de fluidité')
+  assert.ok(during.p95 < 34, `scène gelée pendant la campagne (p95 ${during.p95} ms)`)
+  await dialog.getByRole('button', { name: 'Annuler' }).click()
+  await fill({ fleets: '20, 100, 300', replications: '3', seconds: '1200', seed: '5' })
+  await dialog.getByRole('button', { name: 'Lancer la campagne' }).click()
+  await dialog.locator('table tbody tr').nth(2).waitFor({ timeout: 60000 })
+  for (const label of ['R = 3 réplications', 'IC 95 %', 'MSER-5', 'solveur non validé', 'pas de base de normalisation']) {
+    assert.ok((await dialog.innerText()).includes(label), `mention absente : ${label}`)
+  }
+  await page.screenshot({ path: fileURLToPath(new URL('./campaign.png', import.meta.url)) })
+  const [download] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('button', { name: /Exporter/ }).click()])
+  const exported = JSON.parse(await readFile(await download.path(), 'utf8'))
+  const { analyzeFleet, replicationSeeds, runReplication } = await import('../src/sim/campaign.ts')
+  const m = exported.manifeste
+  assert.match(m.code, /^[0-9a-f]{7,}/, 'commit absent du manifeste')
+  assert.deepEqual(m.grainesReplications, replicationSeeds(5, 3))
+  assert.deepEqual(m.parametres.fleets, [20, 100, 300])
+  assert.equal(exported.replications.length, 9)
+  assert.deepEqual(exported.replications[4], runReplication(m.parametres.layout, 100, m.grainesReplications[1], 1200), 'Worker et Node divergent')
+  assert.deepEqual(exported.resultats, [20, 100, 300].map((n) => analyzeFleet(exported.replications.filter((r) => r.fleet === n))), 'export non recalculable')
+  for (const r of exported.resultats) assert.equal(m.chauffe.retenueSecondes[r.fleet], r.warmupSeconds)
+  for (const key of ['solveur', 'baseNormalisation', 'confiance', 'date']) assert.ok(m[key], `manifeste sans ${key}`)
+  const table = await dialog.locator('table tbody tr').allInnerTexts()
+  const r100 = exported.resultats[1]
+  if (r100.detected) assert.ok(table[1].includes(`${Math.round(r100.meanThroughput.mean).toLocaleString('fr-FR')} ±`), 'tableau différent de l’export')
+  await page.setViewportSize({ width: 390, height: 844 })
+  assert.ok(await dialog.evaluate((d) => d.scrollWidth <= d.clientWidth + 1), 'campagne débordante sur mobile')
+  await page.screenshot({ path: fileURLToPath(new URL('./campaign-mobile.png', import.meta.url)) })
+  await page.keyboard.press('Escape')
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'open-campaign', 'focus non restauré après la campagne')
+  console.log(`Campagne vérifiée : erreurs, annulation, fluidité pendant le calcul (p95 ${during.p95} ms), export recalculé ; ` +
+    exported.resultats.map((r) => `${r.fleet} robots ${Math.round(r.meanThroughput.mean)} ± ${Math.round(r.meanThroughput.half)} bacs/h (chauffe ${r.warmupSeconds} s${r.detected ? '' : ', non détectée'})`).join(', '))
+  await page.setViewportSize({ width: 1280, height: 800 })
   const additional = await checkRemaining({ browser, page, PAGE, measure, assertRenderedPlan, errors })
   assert.deepEqual(errors, [], 'erreurs console')
   await writeFile(fileURLToPath(new URL('./results.json', import.meta.url)), JSON.stringify({
     date: new Date().toISOString(), renderer, viewport: { width: 1280, height: 800 }, seed: 1,
     speed: 1, seconds: SECONDS, status: 'un seul run par flotte, solveur non validé',
-    results, layouts, geometry, resourceCounts, textureCounts, additional, scenario: { transfer, completed }, congestion: { ...congestion, text: undefined }, errors,
+    results, layouts, geometry, resourceCounts, textureCounts, additional, scenario: { transfer, completed }, campaign: { during, resultats: exported.resultats.map(({ fleet, warmupSeconds, detected, meanThroughput, meanLostRatio }) => ({ fleet, warmupSeconds, detected, meanThroughput, meanLostRatio })) }, congestion: { ...congestion, text: undefined }, errors,
   }, null, 2))
   console.log(`erreurs console : ${errors.length}`)
-  console.log('captures : web/check/scene-{20,100,300}.png, climbing.png, transfer.png, robot-detail.png, bin-detail.png, layout-{dense,large}.png, editor*.png, congestion*.png, mobile.png; résultats : web/check/results.json')
+  console.log('captures : web/check/scene-{20,100,300}.png, climbing.png, transfer.png, robot-detail.png, bin-detail.png, layout-{dense,large}.png, editor*.png, congestion*.png, campaign*.png, mobile.png; résultats : web/check/results.json')
 } finally {
   await browser?.close()
   if (server.exitCode === null) await new Promise((resolve) => {

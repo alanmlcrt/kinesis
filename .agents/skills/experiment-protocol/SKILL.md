@@ -22,6 +22,11 @@ précision.
 - Le régime transitoire du démarrage (entrepôt vide, robots au repos) est **détecté et
   écarté** avant de mesurer. Méthode choisie et documentée ; la durée retenue est écrite
   dans le manifeste. Pas de durée fixe inventée.
+- Méthode retenue (étape 6, `sim/campaign.ts`) : **MSER-5** sur les bacs servis par fenêtre
+  de 10 s simulées, troncature cherchée dans la première moitié de la série seulement
+  (en fin de série, deux lots égaux donnent une variance nulle). Minimum à cette limite :
+  « chauffe non détectée », aucun chiffre affiché, allonger la durée. Chauffe d'une flotte
+  = la plus longue de ses réplications, appliquée à toutes.
 
 ## Définitions
 

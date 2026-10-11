@@ -45,7 +45,7 @@ Ordre adapté à la demande du 10 octobre 2026 : étape 5 réalisée avant l'ét
   déterminisme et cycle complet sur les plans configurés, édition vérifiée au clavier
   et à la souris dans le navigateur, interface mobile contrôlée.
 
-- [ ] **6. Mesurer.** Campagne de saturation : plusieurs tailles de flotte, réplications,
+- [x] **6. Mesurer.** Campagne de saturation : plusieurs tailles de flotte, réplications,
   intervalle de confiance, chauffe écartée, export + manifeste. Calcul hors du fil
   d'affichage (Web Worker) pour que l'interface ne gèle pas.
 

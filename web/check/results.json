@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-11T08:31:47.663Z",
+  "date": "2026-10-11T09:10:31.288Z",
   "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A6) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "viewport": {
     "width": 1280,
@@ -13,48 +13,48 @@
     {
       "frames": 300,
       "fps": 60.00240009600384,
-      "p95": 16.700000000000728,
+      "p95": 16.800000000000182,
       "max": 16.800000000000182,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03840017318725586,
-      "totalMove": 39.08855725870796,
-      "binMove": 13.18774139881134,
+      "maxMove": 0.03720003366470337,
+      "totalMove": 38.44490658668317,
+      "binMove": 12.640621781349182,
       "meanDt": 16.666,
       "drawCalls": 21,
       "triangles": 254206
     },
     {
       "frames": 300,
-      "fps": 60.00240009600385,
+      "fps": 60.002400096003825,
       "p95": 16.700000000000728,
       "max": 16.80000000000109,
       "robot": true,
       "count": 100,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03820037841796875,
-      "totalMove": 157.25375040598732,
-      "binMove": 27.969171404838562,
-      "meanDt": 16.665999999999997,
+      "maxMove": 0.0372004508972168,
+      "totalMove": 156.55490232733794,
+      "binMove": 28.800481915473938,
+      "meanDt": 16.666000000000004,
       "drawCalls": 21,
       "triangles": 463966
     },
     {
       "frames": 300,
-      "fps": 60.003600216013,
-      "p95": 16.799999999999272,
+      "fps": 60.00120002400046,
+      "p95": 16.700000000000728,
       "max": 16.80000000000291,
       "robot": true,
       "count": 300,
       "instanced": true,
       "still": 0,
       "maxMove": 0.037200927734375,
-      "totalMove": 210.22425875040207,
-      "binMove": 27.252569437026978,
-      "meanDt": 16.665666666666656,
+      "totalMove": 210.34261388420487,
+      "binMove": 27.28151899576187,
+      "meanDt": 16.666333333333338,
       "drawCalls": 21,
       "triangles": 988366
     }
@@ -65,18 +65,18 @@
       "columns": 80,
       "levels": 4,
       "stations": 4,
-      "frames": 300,
-      "fps": 60.002400096003804,
+      "frames": 301,
+      "fps": 60.001993421708356,
       "p95": 16.700000000004366,
       "max": 16.80000000000291,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03779999911785126,
-      "totalMove": 32.2557678584258,
-      "binMove": 3.458840012550354,
-      "meanDt": 16.66600000000001,
+      "maxMove": 0.03660011291503906,
+      "totalMove": 32.685112306955105,
+      "binMove": 3.704259991645813,
+      "meanDt": 16.666112956810633,
       "drawCalls": 21,
       "triangles": 551038
     },
@@ -87,15 +87,15 @@
       "stations": 6,
       "frames": 300,
       "fps": 60.002400096003804,
-      "p95": 16.799999999995634,
+      "p95": 16.700000000004366,
       "max": 16.80000000000291,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03859996795654297,
-      "totalMove": 34.87683943168798,
-      "binMove": 14.164370059967041,
+      "maxMove": 0.037799835205078125,
+      "totalMove": 34.85858876854119,
+      "binMove": 14.192609310150146,
       "meanDt": 16.66600000000001,
       "drawCalls": 21,
       "triangles": 1074894
@@ -133,40 +133,40 @@
       {
         "speed": 1,
         "ticks": 5,
-        "seconds": 0.5012999999523163
+        "seconds": 0.5056000000238419
       },
       {
         "speed": 2,
         "ticks": 10,
-        "seconds": 0.5146000000238419
+        "seconds": 0.5031000000238418
       },
       {
         "speed": 5,
         "ticks": 25,
-        "seconds": 0.5051000000238418
+        "seconds": 0.5052999999523163
       },
       {
         "speed": 10,
-        "ticks": 50,
-        "seconds": 0.5025
+        "ticks": 52,
+        "seconds": 0.5075
       }
     ],
     "stress": [
       {
         "preset": "dense",
         "bins": 320,
-        "frames": 301,
-        "fps": 60.00318953831431,
-        "p95": 16.700000000000728,
+        "frames": 300,
+        "fps": 60.00240009600385,
+        "p95": 16.799999999999272,
         "max": 16.80000000000291,
         "robot": true,
         "count": 220,
         "instanced": true,
         "still": 0,
-        "maxMove": 0.03760051727294922,
-        "totalMove": 163.79293117451857,
-        "binMove": 19.475939393043518,
-        "meanDt": 16.665780730897016,
+        "maxMove": 0.041800498962402344,
+        "totalMove": 163.40661819177973,
+        "binMove": 19.432178854942322,
+        "meanDt": 16.665999999999997,
         "drawCalls": 21,
         "triangles": 1075438
       },
@@ -174,25 +174,25 @@
         "preset": "large",
         "bins": 720,
         "frames": 300,
-        "fps": 60.00240009600385,
-        "p95": 16.799999999999272,
+        "fps": 60.001200024000504,
+        "p95": 16.700000000004366,
         "max": 16.80000000000291,
         "robot": true,
         "count": 300,
         "instanced": true,
         "still": 0,
-        "maxMove": 0.03880023956298828,
-        "totalMove": 186.74900789062087,
-        "binMove": 22.97162014245987,
-        "meanDt": 16.665999999999997,
+        "maxMove": 0.04020118713378906,
+        "totalMove": 186.79794046288725,
+        "binMove": 23.15442156791687,
+        "meanDt": 16.666333333333327,
         "drawCalls": 21,
         "triangles": 1809054
       },
       {
         "preset": "maximum",
         "bins": 1920,
-        "frames": 216,
-        "fps": 43.0579089006279,
+        "frames": 217,
+        "fps": 43.11458147066421,
         "p95": 33.400000000001455,
         "max": 33.5,
         "robot": true,
@@ -200,9 +200,9 @@
         "instanced": true,
         "still": 0,
         "maxMove": 0.05660057067871094,
-        "totalMove": 83.67186364572179,
-        "binMove": 18.456161379814148,
-        "meanDt": 23.224537037037052,
+        "totalMove": 83.76343108075264,
+        "binMove": 18.502641558647156,
+        "meanDt": 23.194009216589855,
         "drawCalls": 21,
         "triangles": 3380622
       }
@@ -244,7 +244,7 @@
       "robot": 12,
       "bin": 12,
       "level": 1,
-      "progress": 1,
+      "progress": 2,
       "robotY": 1.600000023841858,
       "binY": 2.049999952316284,
       "columns": 32,
@@ -252,13 +252,72 @@
     },
     "completed": 1
   },
+  "campaign": {
+    "during": {
+      "frames": 120,
+      "fps": 60.00000000000002,
+      "p95": 16.799999999999272,
+      "max": 16.800000000000182,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 120,
+      "maxMove": 0,
+      "totalMove": 0,
+      "binMove": 0,
+      "meanDt": 16.66666666666666,
+      "drawCalls": 21,
+      "triangles": 254206
+    },
+    "resultats": [
+      {
+        "fleet": 20,
+        "warmupSeconds": 150,
+        "detected": true,
+        "meanThroughput": {
+          "mean": 230.8571428571429,
+          "half": 21.435819604634865
+        },
+        "meanLostRatio": {
+          "mean": 2.69993939042647,
+          "half": 0.5130525337515327
+        }
+      },
+      {
+        "fleet": 100,
+        "warmupSeconds": 0,
+        "detected": true,
+        "meanThroughput": {
+          "mean": 395,
+          "half": 30.121
+        },
+        "meanLostRatio": {
+          "mean": 9.750862063664933,
+          "half": 0.6839765172490195
+        }
+      },
+      {
+        "fleet": 300,
+        "warmupSeconds": 450,
+        "detected": true,
+        "meanThroughput": {
+          "mean": 476.8,
+          "half": 58.82375698576223
+        },
+        "meanLostRatio": {
+          "mean": 29.677879989380912,
+          "half": 2.069262892274683
+        }
+      }
+    ]
+  },
   "congestion": {
-    "tick": 1506,
+    "tick": 1505,
     "robots": 100,
-    "lostSteps": 124715,
+    "lostSteps": 124638,
     "freeSteps": 11010,
     "nonzero": 129,
-    "max": 1504,
+    "max": 1503,
     "top": 984,
     "layerY": 0.004,
     "top3d": [

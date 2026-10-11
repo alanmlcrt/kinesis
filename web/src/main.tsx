@@ -10,6 +10,7 @@ import { binPosition, createSim, DT, LEVEL_HEIGHT, robotPosition, step, type Sta
 import { validateLayout, type Layout } from './sim/layout.ts'
 import { Editor } from './Editor.tsx'
 import { CongestionPanel, HeatLayer } from './Congestion.tsx'
+import { Campaign } from './Campaign.tsx'
 import { GEOMETRY } from './sim/geometry.ts'
 import { loadConfiguration, saveConfiguration } from './preferences.ts'
 
@@ -194,7 +195,7 @@ function CameraFit({ sim }: { sim: State }) {
   return null
 }
 
-function Controls({ count, onCount, sim, onEdit, error }: { count: number; onCount: (n: number) => void; sim: State; onEdit: () => void; error: string }) {
+function Controls({ count, onCount, sim, onEdit, onMeasure, error }: { count: number; onCount: (n: number) => void; sim: State; onEdit: () => void; onMeasure: () => void; error: string }) {
   const [playing, setPlaying] = useState(clock.playing)
   const [speed, setSpeed] = useState(clock.speed)
   return (
@@ -214,6 +215,7 @@ function Controls({ count, onCount, sim, onEdit, error }: { count: number; onCou
       </select>
       <span className="meta">graine {sim.seed}</span>
       <button id="open-editor" onClick={onEdit}>Construire</button>
+      <button id="open-campaign" onClick={onMeasure}>Mesurer</button>
       {error && <p role="alert" className="error">{error}</p>}
       <details className="meta">
         <summary>Skypod 2025+ · modèle illustratif</summary>
@@ -238,6 +240,8 @@ function App() {
   const [revision, setRevision] = useState(0)
   const [editing, setEditing] = useState(false)
   const [cut, setCut] = useState(0)
+  const [measuring, setMeasuring] = useState(false)
+  const closeCampaign = () => { setMeasuring(false); document.getElementById('open-campaign')?.focus() }
   const level = Math.min(cut, sim.levels)
   const [error, setError] = useState(initial.current.warning)
   const closeEditor = () => { setEditing(false); document.getElementById('open-editor')?.focus() }
@@ -282,7 +286,9 @@ function App() {
       <CameraFit sim={sim} />
     </Canvas>
     <CongestionPanel key={revision} sim={sim} level={level} onLevel={setCut} />
-    <Controls count={count} onCount={changeCount} sim={sim} onEdit={() => setEditing(true)} error={error} />
+    <Controls count={count} onCount={changeCount} sim={sim} onEdit={() => { setMeasuring(false); setEditing(true) }}
+      onMeasure={() => { setEditing(false); setMeasuring(true) }} error={error} />
+    {measuring && <Campaign layout={sim.layout} onClose={closeCampaign} />}
     {editing && <Editor layout={sim.layout} count={count} onApply={apply} onClose={closeEditor} />}
   </>
   )
