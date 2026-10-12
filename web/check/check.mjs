@@ -13,6 +13,7 @@ import { checkControl } from './control.mjs'
 import { checkProfiles } from './profiles.mjs'
 import { checkRhcr } from './rhcr.mjs'
 import { checkLab } from './lab.mjs'
+import { checkBrush } from './brush.mjs'
 import { expected, resetPlan, usePlan } from './plans.mjs'
 import { PRESETS, storageSlots } from '../src/sim/layout.ts'
 
@@ -44,6 +45,8 @@ try {
   // GPU réel si possible ; le moteur de rendu effectivement utilisé est relevé plus bas.
   browser = await chromium.launch({ args: ['--ignore-gpu-blocklist', '--enable-gpu'] })
   const lab = await checkLab({ browser, PAGE })
+  const brush = await checkBrush({ browser, PAGE })
+  console.log(`Pinceau vérifié : trait rapide sans trou, travée centrée, clic droit = gomme, zone jusqu’au bord droit ; survol 80 × 64 : ${brush.hoverMs} ms par déplacement`)
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
   const errors = []
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
@@ -700,7 +703,7 @@ try {
   await writeFile(fileURLToPath(new URL('./results.json', import.meta.url)), JSON.stringify({
     date: new Date().toISOString(), renderer, viewport: { width: 1280, height: 800 }, seed: 1,
     speed: 1, seconds: SECONDS, status: 'un seul run par flotte, solveur non validé',
-    results, layouts, geometry, resourceCounts, textureCounts, additional, classic, theme, lab, exploration, control, profiles, rhcr, scenario: { transfer, completed }, campaign: { during, resultats: exported.resultats.map(({ fleet, warmupSeconds, detected, meanThroughput, meanLostRatio }) => ({ fleet, warmupSeconds, detected, meanThroughput, meanLostRatio })) }, congestion: { ...congestion, text: undefined }, errors,
+    results, layouts, geometry, resourceCounts, textureCounts, additional, classic, theme, lab, brush, exploration, control, profiles, rhcr, scenario: { transfer, completed }, campaign: { during, resultats: exported.resultats.map(({ fleet, warmupSeconds, detected, meanThroughput, meanLostRatio }) => ({ fleet, warmupSeconds, detected, meanThroughput, meanLostRatio })) }, congestion: { ...congestion, text: undefined }, errors,
   }, null, 2))
   console.log(`erreurs console : ${errors.length}`)
   console.log('captures : web/check/scene-{20,100,300}.png, climbing.png, transfer.png, robot-detail.png, bin-detail.png, layout-{dense,large}.png, editor*.png (dont editor-aisles), congestion*.png, campaign*.png (dont campaign-compare), mobile.png; résultats : web/check/results.json')

@@ -25,7 +25,7 @@ declare global {
   }
 }
 // Lu par useFrame, écrit par les boutons : hors state React pour ne pas re-rendre à chaque image.
-const clock = { playing: location.hash === '#simulation' && !matchMedia('(prefers-reduced-motion: reduce)').matches, speed: 1, acc: 0 }
+const clock = { playing: location.hash === '#simulation' && !matchMedia('(prefers-reduced-motion: reduce)').matches, speed: 1, acc: 0, resumed: true }
 
 function Robots({ sim, onSelect }: { sim: State; onSelect: (id: number) => void }) {
   const mesh = useRef<InstancedMesh>(null!)
@@ -46,6 +46,8 @@ function Robots({ sim, onSelect }: { sim: State; onSelect: (id: number) => void 
   }, [sim])
 
   useFrame((_, delta) => {
+    // Retour dans Simuler : la boucle était arrêtée, le premier écart couvre tout le temps passé ailleurs.
+    if (clock.resumed) { clock.resumed = false; delta = 0 }
     if (clock.playing) clock.acc += delta * clock.speed
     let n = 0
     while (clock.acc >= DT && n++ < MAX_STEPS_PER_FRAME) {
@@ -295,14 +297,14 @@ function App() {
   const navigate = (next: string) => {
     setTab(next); location.hash = next
     setMeasuring(next === 'analyser')
-    if (next !== 'simulation') clock.playing = false
+    if (next !== 'simulation') { clock.playing = false; clock.resumed = true }
   }
   useEffect(() => {
     const changed = () => {
       const requested = location.hash.slice(1)
       const next = ['concevoir', 'simulation', 'analyser'].includes(requested) ? requested : 'concevoir'
       setTab(next); setMeasuring(next === 'analyser')
-      if (next !== 'simulation') clock.playing = false
+      if (next !== 'simulation') { clock.playing = false; clock.resumed = true }
     }
     window.addEventListener('hashchange', changed)
     return () => window.removeEventListener('hashchange', changed)
@@ -340,7 +342,8 @@ function App() {
       </nav>
     </header>
     <div id="space-simulation" role="tabpanel" aria-labelledby="tab-simulation" className="simulation-space" style={{ visibility: tab === 'simulation' ? 'visible' : 'hidden' }}>
-    <Canvas shadows camera={{ position: [31, 27, 33], fov: 45 }} dpr={[1, 2]}
+    {/* Hors de Simuler, la scène cachée ne se redessine plus : Concevoir et Analyser gardent toute la machine. */}
+    <Canvas shadows camera={{ position: [31, 27, 33], fov: 45 }} dpr={[1, 2]} frameloop={tab === 'simulation' ? 'always' : 'never'}
       onCreated={(view) => { window.kinesisView = view }}>
       <color attach="background" args={[PALETTE.background]} />
       <StudioLight sim={sim} />

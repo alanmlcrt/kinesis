@@ -72,6 +72,9 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 600; }
 .plan-cursor { fill: none; stroke: var(--accent); stroke-width: .18; pointer-events: none; }
 .plan-ghost { fill: var(--accent); fill-opacity: .25; stroke: var(--accent); stroke-width: .12; pointer-events: none; }
 .plan-ghost.invalid { fill: none; stroke: var(--error); stroke-dasharray: .4 .3; }
+.plan-ghost.erase { fill: var(--error); fill-opacity: .2; stroke: var(--error); stroke-dasharray: none; }
+.plan-selection { fill: var(--accent); fill-opacity: .06; stroke: var(--accent); stroke-width: .1; stroke-dasharray: .5 .3; pointer-events: none; }
+.plan-selection.erase { fill: var(--error); stroke: var(--error); }
 .handle { fill: var(--accent); stroke: var(--panel); stroke-width: .2; cursor: ew-resize; }
 .handle[data-handle=z] { cursor: ns-resize; } .handle[data-handle=xz] { cursor: nwse-resize; }
 .handle:hover { fill: var(--text); }

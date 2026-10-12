@@ -2,7 +2,7 @@
 
 Carte du code pour reprendre le projet vite et le faire évoluer sans tout relire.
 À tenir à jour à chaque changement de structure (nouveau module, nouvelle frontière,
-nouveau point d’extension). Dernière mise à jour : 11 octobre 2026.
+nouveau point d’extension). Dernière mise à jour : 12 octobre 2026.
 
 ## Vue d’ensemble
 
@@ -71,8 +71,12 @@ un profil = données + quelques branches explicites dans `layoutFloor`, `floorNe
   re-rendre à chaque image), l’onglet (fragment d’URL `#concevoir|#simulation|#analyser`),
   la révision (clé qui remplace proprement toutes les instances 3D) et `apply()`.
   L’horloge `clock` (lecture, vitesse, accumulateur) est un objet module lu par `useFrame`.
-- `Editor.tsx` : brouillon local (`draft`, historique de 50), gestes pointeur (peinture,
-  poignées de redimensionnement) et clavier ; toute validation passe par `sim/layout.ts`.
+  Hors de Simuler, le `Canvas` passe en `frameloop="never"` : la scène cachée ne se
+  redessine plus pendant Concevoir et Analyser.
+- `Editor.tsx` : brouillon local (`draft`, historique de 50), gestes pointeur (peinture
+  interpolée, clic droit = gomme, ligne/zone, poignées) et clavier ; grille et équipements
+  mémorisés (le survol ne les recrée pas) ; bornes de pose lues dans `rackBounds`, toute
+  validation passe par `sim/layout.ts`.
   Ne connaît pas la scène ; rend la main par `onApply(layout, count)`.
 - `Lab.tsx`, `Congestion.tsx` : lecture à 4 Hz du `State` ; historique borné.
 - `Campaign.tsx`, `Exploration.tsx` : paramètres → Worker → résultats + export JSON

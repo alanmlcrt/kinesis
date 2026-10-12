@@ -1,9 +1,10 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { editLayout, layoutMetrics, regularLayout, resizeLayout, TEMPLATES, templateLayout, validateLayout, profileLabel, withProfile, type Architecture, type Layout } from './sim/layout.ts'
+import { editLayout, layoutMetrics, rackBounds, regularLayout, resizeLayout, TEMPLATES, templateLayout, validateLayout, profileLabel, withProfile, type Architecture, type Layout } from './sim/layout.ts'
 import { loadPlans, savePlans } from './preferences.ts'
 
 type Tool = 'rack' | 'station' | 'lift' | 'erase'
 type Mode = 'point' | 'line' | 'area'
+type Cell = { x: number; z: number }
 const ARCHITECTURES: [Architecture, string][] = [['skypod', 'Skypod 2025+'], ['classic', 'Skypod classique'], ['lifts', 'Ascenseurs'], ['autostore', 'AutoStore']]
 // Ce qu'il faut savoir d'une technologie pour la configurer ; hypothèses détaillées dans docs/SKYPOD.md et docs/PROFILES.md.
 const HOW: Record<Architecture, string> = {
@@ -51,17 +52,18 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
   const [storage, setStorage] = useState(layout.storage)
   const [tool, setTool] = useState<Tool>('rack')
   const [mode, setMode] = useState<Mode>('point')
-  const [shape, setShape] = useState<{ start: { x: number; z: number }; end: { x: number; z: number } } | null>(null)
+  const [shape, setShape] = useState<{ tool: Tool; start: Cell; end: Cell } | null>(null)
   const [cursor, setCursor] = useState({ x: 2, z: 2 })
-  const [hover, setHover] = useState<{ x: number; z: number } | null>(null)
+  const [hover, setHover] = useState<Cell | null>(null)
   const [frame, setFrame] = useState<{ w: number; d: number } | null>(null)
   const [error, setError] = useState('')
   const [planName, setPlanName] = useState('')
   const [notice, setNotice] = useState('Brouillon : la simulation en cours continue jusqu’à « Appliquer le plan ».')
   const svg = useRef<SVGSVGElement>(null)
   const current = useRef(draft); current.current = draft
-  // Geste en cours : peinture d'outil, ou poignée de redimensionnement (base figée au début du geste).
-  const gesture = useRef<{ kind: 'paint'; last: string } | { kind: 'shape' } | { kind: 'resize'; axis: 'x' | 'z' | 'xz'; x: number; y: number; scale: number; base: Layout } | null>(null)
+  // Geste en cours : trait de pinceau (un seul pas d'annulation), ligne/zone, ou poignée de redimensionnement (base figée au début du geste).
+  type Stroke = { kind: 'paint'; tool: Tool; last: Cell; seen: Set<string>; base: Layout; done: number; skipped: number; error: string }
+  const gesture = useRef<Stroke | { kind: 'shape'; tool: Tool; start: Cell; end: Cell } | { kind: 'resize'; axis: 'x' | 'z' | 'xz'; x: number; y: number; scale: number; base: Layout } | null>(null)
 
   const commit = (plan: Layout, record = true) => {
     const previous = current.current
@@ -70,9 +72,38 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     setError(''); setNotice('Plan modifié. « Appliquer le plan » redémarre la simulation avec ce plan.')
   }
   const fail = (e: unknown) => setError((e as Error).message)
-  const use = (x: number, z: number, record = true, quiet = false) => {
+  const pointAt = (e: PointerEvent) => {
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.current!.getScreenCTM()!.inverse())
+    return { x: p.x, z: p.y }
+  }
+  const onFloor = (p: Cell) => p.x >= 0 && p.z >= 0 && p.x < current.current.width && p.z < current.current.depth
+  // Position visée par l'outil : la travée se centre sous le pointeur (allée sur la colonne paire la plus proche),
+  // ramenée dans la zone permise ; stations et gaines sur l'emplacement pair le plus proche ; gomme sur la cellule.
+  const snap = (t: Tool, p: Cell): Cell => {
+    const l = current.current, b = rackBounds(l), even = (v: number) => Math.round((v - .5) / 2) * 2, clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+    if (t === 'erase') return { x: Math.floor(p.x), z: Math.floor(p.z) }
+    if (t === 'rack') return { x: clamp(l.profile === 'autostore' ? Math.floor(p.x) : even(p.x), b.x0, b.x1), z: clamp(Math.floor(p.z), b.z0, b.z1) }
+    return { x: clamp(even(p.x), 0, l.width - 2), z: clamp(even(p.z), 0, l.depth - 2) }
+  }
+  const items = (l: Layout) => l.racks.length + l.stations.length + (l.lifts?.length ?? 0)
+  // Pinceau : chaque position traversée depuis le dernier point est traitée, même si le pointeur va vite ;
+  // les positions refusées (occupées, hors règles) sont sautées sans interrompre le trait.
+  const paint = (g: Stroke, to: Cell, first = false) => {
+    const from = g.last, n = Math.ceil(Math.hypot(to.x - from.x, to.z - from.z) * 3)
+    let plan = current.current
+    for (let i = first ? 0 : 1; i <= n; i++) {
+      const c = snap(g.tool, { x: from.x + (to.x - from.x) * i / Math.max(1, n), z: from.z + (to.z - from.z) * i / Math.max(1, n) }), id = `${c.x},${c.z}`
+      if (g.seen.has(id)) continue
+      g.seen.add(id)
+      try { const next = editLayout(plan, g.tool, c.x, c.z); if (items(next) !== items(plan)) { plan = next; g.done++ } } catch (e) { g.skipped++; g.error ||= (e as Error).message }
+      setCursor(c)
+    }
+    g.last = to
+    if (plan !== current.current) commit(plan, false)
+  }
+  const use = (x: number, z: number) => {
     setCursor({ x, z })
-    try { commit(editLayout(current.current, tool, x, z), record) } catch (e) { if (!quiet) fail(e) }
+    try { commit(editLayout(current.current, tool, x, z)) } catch (e) { fail(e) }
   }
   const resize = (width: number, depth: number, base = current.current, record = true) => {
     try { commit(resizeLayout(base, width, depth), record) } catch (e) { setError(`Sol ${width} × ${depth} impossible : ${(e as Error).message}`) }
@@ -84,25 +115,24 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
       resize(key === 'width' ? n : current.current.width, key === 'depth' ? n : current.current.depth)
     }
   }
-  const cellAt = (e: PointerEvent) => {
-    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.current!.getScreenCTM()!.inverse())
-    // Travées et gomme sur toutes les lignes ; stations et gaines sur les lignes paires.
-    const fine = tool === 'rack' || tool === 'erase', x = fine && current.current.profile === 'autostore' ? Math.floor(p.x) : Math.floor(p.x / 2) * 2, z = fine ? Math.floor(p.y) : Math.floor(p.y / 2) * 2
-    return x >= 0 && z >= 0 && x < current.current.width && z < current.current.depth ? { x, z } : null
-  }
   const down = (e: PointerEvent<SVGSVGElement>) => {
-    if (e.button !== 0) return
+    if (e.button !== 0 && e.button !== 2) return
     const handle = (e.target as Element).getAttribute('data-handle') as 'x' | 'z' | 'xz' | null
-    if (handle) {
+    if (handle && e.button === 0) {
       const box = svg.current!.getBoundingClientRect(), view = svg.current!.viewBox.baseVal
       gesture.current = { kind: 'resize', axis: handle, x: e.clientX, y: e.clientY, scale: box.width / view.width, base: current.current }
       const previous = current.current
       setFrame({ w: previous.width, d: previous.depth }); setHistory((items) => [...items.slice(-49), previous])
     } else {
-      const cell = cellAt(e)
-      if (!cell) return
-      if (mode === 'point') { gesture.current = { kind: 'paint', last: `${cell.x},${cell.z}` }; use(cell.x, cell.z) }
-      else { gesture.current = { kind: 'shape' }; setShape({ start: cell, end: cell }); setCursor(cell) }
+      const p = pointAt(e)
+      if (!onFloor(p)) return
+      // Clic droit : gomme le temps du geste, quel que soit l'outil choisi.
+      const t: Tool = e.button === 2 ? 'erase' : tool
+      setHover(null)
+      if (mode === 'point') {
+        const g: Stroke = { kind: 'paint', tool: t, last: p, seen: new Set(), base: current.current, done: 0, skipped: 0, error: '' }
+        gesture.current = g; paint(g, p, true)
+      } else { const c = { x: Math.floor(p.x), z: Math.floor(p.z) }; const sh = { tool: t, start: c, end: c }; gesture.current = { kind: 'shape', ...sh }; setShape(sh) }
     }
     svg.current!.setPointerCapture(e.pointerId)
   }
@@ -115,25 +145,58 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
       if (width !== current.current.width || depth !== current.current.depth) resize(width, depth, g.base, false)
       return
     }
-    const cell = cellAt(e)
-    setHover(cell)
-    if (g?.kind === 'shape' && cell) setShape((sh) => sh && { ...sh, end: cell })
-    if (g?.kind === 'paint' && cell && `${cell.x},${cell.z}` !== g.last) { g.last = `${cell.x},${cell.z}`; use(cell.x, cell.z, false, true) }
+    const p = pointAt(e), l = current.current
+    if (g?.kind === 'paint') { paint(g, { x: Math.max(0, Math.min(l.width - .01, p.x)), z: Math.max(0, Math.min(l.depth - .01, p.z)) }); return }
+    if (g?.kind === 'shape') {
+      const c = { x: Math.max(0, Math.min(l.width - 1, Math.floor(p.x))), z: Math.max(0, Math.min(l.depth - 1, Math.floor(p.z))) }
+      if (g.end.x !== c.x || g.end.z !== c.z) { g.end = c; setShape({ tool: g.tool, start: g.start, end: c }) }
+      return
+    }
+    const c = onFloor(p) ? snap(tool, p) : null
+    setHover((h) => h?.x === c?.x && h?.z === c?.z ? h : c)
   }
-  // Ligne (horizontale ou verticale selon le geste) ou zone : chaque position suit l'outil, un seul pas d'annulation.
-  const shapeCells = (start: { x: number; z: number }, end: { x: number; z: number }) => {
-    const sx = draft.profile === 'autostore' ? (tool === 'station' ? 2 : 1) : tool === 'rack' ? 4 : 2, sz = tool === 'rack' || tool === 'erase' ? 1 : 2
-    const range = (a: number, b: number, step: number) => { const out: number[] = []; for (let v = a; b >= a ? v <= b : v >= b; v += b >= a ? step : -step) out.push(v); return out }
-    if (mode === 'line') return Math.abs(end.x - start.x) >= Math.abs(end.z - start.z)
-      ? range(start.x, end.x, sx).map((x) => ({ x, z: start.z })) : range(start.z, end.z, sz).map((z) => ({ x: start.x, z }))
-    return range(start.x, end.x, sx).flatMap((x) => range(start.z, end.z, sz).map((z) => ({ x, z })))
+  // Ligne (horizontale ou verticale selon le geste) ou zone : la sélection couvre des cellules ; on y loge le plus
+  // de positions possible. Travées à 4 cellules d'écart, calées pour équilibrer les marges des deux côtés.
+  const shapeCells = (t: Tool, start: Cell, end: Cell): Cell[] => {
+    const l = draft, b = rackBounds(l)
+    const horizontal = mode === 'area' || Math.abs(end.x - start.x) >= Math.abs(end.z - start.z)
+    const [x0, x1] = horizontal ? [Math.min(start.x, end.x), Math.max(start.x, end.x)] : [start.x, start.x]
+    const [z0, z1] = mode === 'area' || !horizontal ? [Math.min(start.z, end.z), Math.max(start.z, end.z)] : [start.z, start.z]
+    const seq = (a: number, z: number, step: number) => { const out: number[] = []; for (let v = a; v <= z; v += step) out.push(v); return out }
+    const up2 = (v: number) => Math.ceil(v / 2) * 2
+    let xs: number[], zs: number[]
+    if (t === 'rack' && l.profile !== 'autostore') {
+      // Une travée occupe x − 1 à x + 1 : elle doit tenir dans la sélection (une colonne cliquée suffit en vertical).
+      const lo = Math.max(b.x0, up2(x0 === x1 ? snap('rack', { x: x0 + .5, z: 0 }).x : x0 + 1)), hi = Math.min(b.x1, x0 === x1 ? lo : Math.floor((x1 - 1) / 2) * 2)
+      const options = [seq(lo, hi, 4), seq(lo + 2, hi, 4)].filter((o) => o.length)
+      const gap = (o: number[]) => Math.abs((o[0] - 1 - x0) - (x1 - o[o.length - 1] - 1))
+      xs = options.sort((a, c) => c.length - a.length || gap(a) - gap(c))[0] ?? []
+      zs = seq(Math.max(b.z0, z0), Math.min(b.z1, z1), 1)
+    } else if (t === 'rack') { xs = seq(Math.max(b.x0, x0), Math.min(b.x1, x1), 1); zs = seq(Math.max(b.z0, z0), Math.min(b.z1, z1), 1) }
+    else { xs = seq(up2(x0), x1, 2); zs = seq(up2(z0), z1, 2) }
+    return xs.flatMap((x) => zs.map((z) => ({ x, z })))
   }
   const up = () => {
-    if (gesture.current?.kind === 'shape' && shape) {
+    const g = gesture.current
+    if (g?.kind === 'paint') {
+      const plan = current.current
+      if (plan !== g.base) { setHistory((items) => [...items.slice(-49), g.base]); setNotice(`${g.done} ${g.tool === 'erase' ? 'retrait' : 'ajout'}${g.done > 1 ? 's' : ''}${g.skipped ? ` · ${g.skipped} position${g.skipped > 1 ? 's' : ''} sautée${g.skipped > 1 ? 's' : ''} (occupée ou hors règles)` : ''}. « Appliquer le plan » redémarre la simulation avec ce plan.`) }
+      else if (g.tool !== 'erase' && g.error) setError(g.error)
+    }
+    // Sélection lue dans le geste, pas dans l'état React : un relâchement rapide arrive avant le rendu.
+    if (g?.kind === 'shape') {
+      const { tool: t, start, end } = g
       let plan = current.current, done = 0, skipped = 0
-      for (const p of shapeCells(shape.start, shape.end)) { try { plan = editLayout(plan, tool, p.x, p.z); done++ } catch { skipped++ } }
+      if (t === 'erase') {
+        // Gomme en zone : tout équipement qui touche la sélection, en une seule validation.
+        const [x0, x1, z0, z1] = [Math.min(start.x, end.x), Math.max(start.x, end.x), Math.min(start.z, end.z), Math.max(start.z, end.z)]
+        const w = plan.profile === 'autostore' ? 0 : 1, hit = (p: Cell, r: number) => p.x + r >= x0 && p.x - r <= x1 && p.z >= z0 && p.z <= z1
+        const next = { ...plan, racks: plan.racks.filter((p) => !hit(p, w)), stations: plan.stations.filter((p) => !hit(p, 0)), ...(plan.lifts ? { lifts: plan.lifts.filter((p) => !hit(p, 0)) } : {}) }
+        done = items(plan) - items(next)
+        try { if (done) { validateLayout(next); plan = next } } catch (e) { skipped = done; done = 0; fail(e) }
+      } else for (const p of shapeCells(t, start, end)) { try { plan = editLayout(plan, t, p.x, p.z); done++ } catch { skipped++ } }
       if (plan !== current.current) commit(plan)
-      setNotice(`${done} position${done > 1 ? 's' : ''} traitée${done > 1 ? 's' : ''}${skipped ? ` · ${skipped} ignorée${skipped > 1 ? 's' : ''} (occupée ou hors règles)` : ''}.`)
+      setNotice(`${done} ${t === 'erase' ? 'retrait' : 'ajout'}${done > 1 ? 's' : ''}${skipped ? ` · ${skipped} ignoré${skipped > 1 ? 's' : ''} (occupé ou hors règles)` : ''}.`)
       setShape(null)
     }
     gesture.current = null; setFrame(null)
@@ -147,9 +210,18 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); use(cursor.x, cursor.z) }
   }
   const ghost = hover
-  const ghostValid = useMemo(() => {
-    if (!ghost) return false
-    try { editLayout(draft, tool, ghost.x, ghost.z); return true } catch { return false }
+  // Fantôme : emprise de ce que l'outil poserait, ou de l'équipement que la gomme retirerait.
+  const ghostShape = useMemo(() => {
+    if (!ghost) return null
+    const autostore = draft.profile === 'autostore'
+    if (tool === 'erase') {
+      const rack = draft.racks.find((p) => p.z === ghost.z && Math.abs(p.x - ghost.x) <= (autostore ? 0 : 1))
+      const other = [...draft.stations, ...draft.lifts ?? []].some((p) => p.x === ghost.x && p.z === ghost.z)
+      return rack && !autostore ? { x: rack.x - 1, w: 3, valid: true } : { x: ghost.x, w: 1, valid: !!rack || other }
+    }
+    let valid = true
+    try { editLayout(draft, tool, ghost.x, ghost.z) } catch { valid = false }
+    return tool === 'rack' && !autostore ? { x: ghost.x - 1, w: 3, valid } : { x: ghost.x, w: 1, valid }
   }, [draft, tool, ghost?.x, ghost?.z])
 
   const setArchitecture = (value: Architecture) => {
@@ -195,6 +267,21 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
   const view = frame ?? { w: draft.width, d: draft.depth }
   const fleetShare = metrics ? Math.min(1, Number(robots) / Math.max(1, metrics.fleet)) : 0
 
+  // Couches mémorisées : survoler le plan ne redessine ni la grille (jusqu'à 5 120 cases) ni les équipements.
+  const grid = useMemo(() => Array.from({ length: draft.width * draft.depth }, (_, i) => {
+    // Une case = une cellule du moteur ; emplacements aux coordonnées paires, voies entre eux.
+    const x = i % draft.width, z = Math.floor(i / draft.width), slot = x % 2 === 0 && z % 2 === 0
+    return <rect key={i} className={slot ? 'plan-cell' : 'plan-lane'} data-cell={x % 2 === 0 || autostore ? `${x},${z}` : undefined} x={x + .06} y={z + .06} width=".88" height=".88" rx=".18" />
+  }), [draft.width, draft.depth, autostore])
+  const equipment = useMemo(() => <>
+    {draft.racks.map((p) => <g key={`r${p.x}-${p.z}`} className="plan-rack">
+      {!autostore && [-1, 1].map((side) => <rect key={side} className="plan-stock" x={p.x + side + .08} y={p.z + .08} width=".84" height=".84" rx=".2" />)}
+      <rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" />
+      <text x={p.x + .5} y={p.z + .7} style={{ fontSize: '.6px' }}>{autostore ? 'P' : 'R'}</text></g>)}
+    {draft.lifts?.map((p) => <g key={`l${p.x}-${p.z}`} className="plan-station plan-lift"><rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" /><text x={p.x + .5} y={p.z + .7}>L</text></g>)}
+    {draft.stations.map((p) => <g key={`s${p.x}-${p.z}`} className="plan-station"><rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" /><text x={p.x + .5} y={p.z + .7}>S</text></g>)}
+  </>, [draft, autostore])
+
   return <section className="editor studio" aria-labelledby="editor-title">
     <div className="board">
       <header className="board-head">
@@ -232,30 +319,22 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
           <span className="ruler-line" aria-hidden="true" /></div>
         <svg ref={svg} className="plan" viewBox={`-1 -1 ${view.w + 4} ${view.d + 4}`} style={{ '--ratio': (view.w + 4) / (view.d + 4) } as CSSProperties} tabIndex={0} role="group"
           aria-label={`Plan ${draft.width} par ${draft.depth}. Emplacement x ${cursor.x}, z ${cursor.z}. Outil ${tool}.`} aria-describedby="plan-help"
-          onKeyDown={key} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={() => setHover(null)}>
+          onKeyDown={key} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={() => setHover(null)} onContextMenu={(e) => e.preventDefault()}>
           <rect className="plan-ground" width={draft.width} height={draft.depth} rx=".6" />
-          {/* Une case = une cellule du moteur ; emplacements aux coordonnées paires, voies entre eux. */}
-          {Array.from({ length: draft.width * draft.depth }, (_, i) => {
-            const x = i % draft.width, z = Math.floor(i / draft.width), slot = x % 2 === 0 && z % 2 === 0
-            return <rect key={i} className={slot ? 'plan-cell' : 'plan-lane'} data-cell={x % 2 === 0 || autostore ? `${x},${z}` : undefined} x={x + .06} y={z + .06} width=".88" height=".88" rx=".18" />
-          })}
-          {draft.racks.map((p) => <g key={`r${p.x}-${p.z}`} className="plan-rack">
-            {!autostore && [-1, 1].map((side) => <rect key={side} className="plan-stock" x={p.x + side + .08} y={p.z + .08} width=".84" height=".84" rx=".2" />)}
-            <rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" />
-            <text x={p.x + .5} y={p.z + .7} style={{ fontSize: '.6px' }}>{autostore ? 'P' : 'R'}</text></g>)}
-          {draft.lifts?.map((p) => <g key={`l${p.x}-${p.z}`} className="plan-station plan-lift"><rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" /><text x={p.x + .5} y={p.z + .7}>L</text></g>)}
-          {draft.stations.map((p) => <g key={`s${p.x}-${p.z}`} className="plan-station"><rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" /><text x={p.x + .5} y={p.z + .7}>S</text></g>)}
-          {ghost && !gesture.current && <rect className={`plan-ghost${ghostValid ? '' : ' invalid'}`} x={tool === 'rack' && !autostore ? ghost.x - 1 : ghost.x} y={ghost.z}
-            width={tool === 'rack' && !autostore ? 3 : 1} height="1" rx=".25" />}
-          {shape && shapeCells(shape.start, shape.end).slice(0, 2500).map((p) => <rect key={`g${p.x}-${p.z}`} className="plan-ghost" x={tool === 'rack' && !autostore ? p.x - 1 : p.x} y={p.z}
-            width={tool === 'rack' && !autostore ? 3 : 1} height="1" rx=".25" />)}
+          {grid}
+          {equipment}
+          {ghostShape && !shape && <rect className={`plan-ghost${ghostShape.valid ? '' : ' invalid'}${tool === 'erase' ? ' erase' : ''}`} x={ghostShape.x} y={ghost!.z} width={ghostShape.w} height="1" rx=".25" />}
+          {shape && <rect className={`plan-selection${shape.tool === 'erase' ? ' erase' : ''}`} x={Math.min(shape.start.x, shape.end.x)} y={Math.min(shape.start.z, shape.end.z)}
+            width={Math.abs(shape.end.x - shape.start.x) + 1} height={Math.abs(shape.end.z - shape.start.z) + 1} rx=".3" />}
+          {shape && shape.tool !== 'erase' && shapeCells(shape.tool, shape.start, shape.end).slice(0, 2500).map((p) => <rect key={`g${p.x}-${p.z}`} className="plan-ghost" x={shape.tool === 'rack' && !autostore ? p.x - 1 : p.x} y={p.z}
+            width={shape.tool === 'rack' && !autostore ? 3 : 1} height="1" rx=".25" />)}
           <rect className="plan-cursor" x={cursor.x} y={cursor.z} width="1" height="1" rx=".25" />
           <rect className="handle" data-handle="x" x={draft.width + .5} y={draft.depth / 2 - 2.5} width="1" height="5" rx=".5"><title>Étirer la largeur</title></rect>
           <rect className="handle" data-handle="z" x={draft.width / 2 - 2.5} y={draft.depth + .5} width="5" height="1" rx=".5"><title>Étirer la profondeur</title></rect>
           <circle className="handle" data-handle="xz" cx={draft.width + 1} cy={draft.depth + 1} r=".9"><title>Étirer le sol</title></circle>
         </svg>
       </div>
-      <p id="plan-help" className="meta">Point : cliquer ou glisser pour peindre. Ligne : glisser, horizontale ou verticale. Zone : glisser un rectangle à remplir. Poignées pour étirer le sol ; au clavier : flèches puis Entrée. {autostore ? 'Une pile occupe une cellule.' : 'Une travée = allée de grimpe R entre deux rayonnages, un bac de chaque côté par niveau ; deux allées voisines sont à 4 cellules (rayonnages dos à dos).'}</p>
+      <p id="plan-help" className="meta">Point : cliquer ou glisser pour peindre, la travée se centre sous le pointeur. Clic droit : gommer. Ligne : glisser, horizontale ou verticale. Zone : glisser un rectangle, rempli au mieux. Poignées pour étirer le sol ; au clavier : flèches puis Entrée. {autostore ? 'Une pile occupe une cellule.' : 'Une travée = allée de grimpe R entre deux rayonnages, un bac de chaque côté par niveau ; deux allées voisines sont à 4 cellules (rayonnages dos à dos).'}</p>
       <span className="sr-only" role="status">Emplacement x {cursor.x}, z {cursor.z}.</span>
     </div>
 

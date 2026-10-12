@@ -17,11 +17,19 @@ en pause à t = 0 : le lancement reste explicite (bouton Lecture).
   une cellule, grille pleine possible. Stations et gaines sur les emplacements pairs.
 - **Tracé** : *Point* (clic ou glisser-peindre), *Ligne* (glisser : horizontale ou
   verticale selon le geste ; travées au pas de 4 en largeur, de 1 en profondeur) et
-  *Zone* (rectangle rempli). Les positions impossibles sont ignorées et comptées ;
-  un seul pas d'annulation par geste.
+  *Zone* (rectangle rempli). En ligne/zone, les travées doivent tenir dans la
+  sélection et sont calées (pas de 4) pour équilibrer les marges : une zone tirée
+  jusqu’au bord droit pose la dernière allée en x = largeur − 4. Les positions
+  impossibles sont ignorées et comptées ; un seul pas d'annulation par geste.
 - Outils **Travée**, **Station**, (**Ascenseur**), **Gomme** : cliquer, ou **glisser
-  pour peindre** (un seul pas d’annulation par geste). Un fantôme indique la pose :
-  plein si elle est valide, pointillé rouge sinon.
+  pour peindre** (un seul pas d’annulation par geste). La travée se centre sous le
+  pointeur (allée sur la colonne paire la plus proche, ramenée dans la zone permise) ;
+  un trait rapide traite toutes les positions traversées. **Clic droit** = gomme le
+  temps du geste, quel que soit l’outil. La gomme retire l’équipement qui couvre la
+  cellule (rayonnage compris). Un fantôme indique la pose ou le retrait : plein si
+  valide, pointillé rouge sinon.
+- **Remplir automatiquement** : rangées et stations réparties sur toute la largeur
+  (dernière rangée en x = largeur − 4), plus de bande vide à droite.
 - **Dimensions sur la matrice** : champs Largeur/Profondeur avec −/+ (pas de 2) sur les
   bords, et poignées à tirer (bord droit, bord bas, coin). Le sol change immédiatement
   dans le brouillon (`resizeLayout`) : ce qui est au-delà du stockage (stations, gaines)

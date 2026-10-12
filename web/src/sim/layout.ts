@@ -18,16 +18,15 @@ export function regularLayout(width: number, depth: number, rows: number, bays: 
   if (![rows, bays, stationCount].every(Number.isInteger) || rows < 1 || rows > 12 || bays < 1 || bays > 60 ||
       stationCount < 1 || stationCount > 12) throw new RangeError('Choisir 1–12 rangées et stations, et 1–60 travées.')
   // Première allée en x = 4 : le bord gauche reste joignable même si les rayonnages bloquent le sol.
-  const stride = Math.floor((width - 8) / Math.max(1, rows - 1) / 2) * 2
-  if (rows > 1 && stride < 4 || bays + 5 > depth) {
+  // Rangées et stations réparties sur toute la largeur (écarts pairs arrondis), dernière rangée en x = largeur − 4.
+  const spread = (count: number, from: number, to: number) => Array.from({ length: count }, (_, i) => from + Math.round(i * (to - from) / Math.max(1, count - 1) / 2) * 2)
+  if (rows > 1 && (width - 8) / (rows - 1) < 4 || bays + 5 > depth) {
     throw new RangeError('Le sol est trop petit pour ces rangées ou travées. Agrandir le sol ou réduire le stockage.')
   }
-  const racks = Array.from({ length: rows }, (_, i) =>
-    Array.from({ length: bays }, (_, j) => ({ x: 4 + i * stride, z: 2 + j }))).flat()
-  const stationStride = Math.floor((width - 2) / Math.max(1, stationCount - 1) / 2) * 2
-  if (stationCount > 1 && stationStride < 2) throw new RangeError('Pas assez de place pour les stations.')
+  const racks = spread(rows, 4, width - 4).flatMap((x) => Array.from({ length: bays }, (_, j) => ({ x, z: 2 + j })))
+  if (stationCount > 1 && (width - 2) / (stationCount - 1) < 2) throw new RangeError('Pas assez de place pour les stations.')
   const layout = { width, depth, levels, fill, storage, racks, ...(generation ? { generation } : {}),
-    stations: Array.from({ length: stationCount }, (_, i) => ({ x: i * stationStride, z: depth - 2 })) }
+    stations: spread(stationCount, 0, width - 2).map((x) => ({ x, z: depth - 2 })) }
   validateLayout(layout)
   return layout
 }
@@ -136,6 +135,9 @@ for (const plan of Object.values(PRESETS)) {
   Object.freeze(plan.racks); Object.freeze(plan.stations); Object.freeze(plan)
 }
 
+// Positions permises pour une travée (son allée) ou une pile : bordure libre autour du stockage, rangée des stations en bas.
+export function rackBounds(l: Layout) { return { x0: 2, x1: l.width - (l.profile === 'autostore' ? 3 : 4), z0: 2, z1: l.depth - 4 } }
+
 export function validateLayout(layout: Layout): number {
   if (!layout || typeof layout !== 'object' || Array.isArray(layout)) throw new RangeError('Plan invalide : objet de configuration requis.')
   const { width, depth, levels, fill, racks, stations } = layout
@@ -152,13 +154,13 @@ export function validateLayout(layout: Layout): number {
   if (layout.storage !== 'random' && layout.storage !== 'near-station') throw new RangeError('Mode de rangement inconnu.')
   if (!Array.isArray(racks) || racks.length < 1 || racks.length > 2500) throw new RangeError('Le plan doit contenir 1 à 2 500 travées de stockage.')
   if (!Array.isArray(stations) || stations.length < 1 || stations.length > 12) throw new RangeError('Le plan doit contenir 1 à 12 stations.')
-  const used = new Set<number>()
+  const used = new Set<number>(), bounds = rackBounds(layout)
   for (const [kind, points] of [['rack', racks], ['station', stations]] as const) for (const p of points) {
     // Travées sur toutes les lignes (rangées continues) ; stations aux emplacements pairs.
     // AutoStore : grille pleine, une pile sur toute cellule.
     if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.z) || !(kind === 'rack' && layout.profile === 'autostore') && p.x % 2 || kind !== 'rack' && p.z % 2 ||
         p.x < 0 || p.z < 0 || p.x > width - 2 || p.z > depth - 2 ||
-        kind === 'rack' && (p.x < 2 || p.x > width - (layout.profile === 'autostore' ? 3 : 4) || p.z < 2 || p.z > depth - 4)) {
+        kind === 'rack' && (p.x < bounds.x0 || p.x > bounds.x1 || p.z < bounds.z0 || p.z > bounds.z1)) {
       throw new RangeError('Placement hors du sol ou hors des emplacements pairs autorisés.')
     }
     // Travée Skypod : rayonnage à gauche (x − 1), allée de grimpe (x), rayonnage à droite (x + 1).
@@ -250,12 +252,13 @@ export function layoutFloor(layout: Layout): Floor[] {
 export function editLayout(layout: Layout, tool: 'rack' | 'station' | 'lift' | 'erase', x: number, z: number): Layout {
   validateLayout(layout)
   if (!['rack', 'station', 'lift', 'erase'].includes(tool)) throw new RangeError('Outil de placement inconnu.')
-  if (!Number.isInteger(x) || !Number.isInteger(z) || x % 2 && !(layout.profile === 'autostore' && tool !== 'station') || (tool === 'station' || tool === 'lift') && z % 2 || x < 0 || z < 0 || x >= layout.width || z >= layout.depth) {
+  if (!Number.isInteger(x) || !Number.isInteger(z) || x % 2 && tool !== 'erase' && !(layout.profile === 'autostore' && tool !== 'station') || (tool === 'station' || tool === 'lift') && z % 2 || x < 0 || z < 0 || x >= layout.width || z >= layout.depth) {
     throw new RangeError('Choisir des coordonnées paires à l’intérieur du sol (une travée peut aussi occuper une ligne impaire).')
   }
   const next: Layout = { ...layout, racks: layout.racks.map((p) => ({ ...p })), stations: layout.stations.map((p) => ({ ...p })), ...(layout.lifts ? { lifts: layout.lifts.map((p) => ({ ...p })) } : {}) }
   if (tool === 'erase') {
-    next.racks = next.racks.filter((p) => p.z !== z || p.x !== x)
+    // La gomme retire l'équipement qui couvre la cellule : une travée occupe x − 1 à x + 1.
+    next.racks = next.racks.filter((p) => p.z !== z || Math.abs(p.x - x) > (layout.profile === 'autostore' ? 0 : 1))
     next.stations = next.stations.filter((p) => p.x !== x || p.z !== z)
     if (next.lifts) next.lifts = next.lifts.filter((p) => p.x !== x || p.z !== z)
   } else if (tool === 'lift') {

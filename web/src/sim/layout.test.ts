@@ -99,7 +99,12 @@ test('édition de travée/station et contrôle des chevauchements, bordures et c
   assert.equal(editLayout(added, 'rack', 10, 2).racks.length, 66, 'allées voisines à 4 cellules : rayonnages dos à dos')
   assert.throws(() => editLayout(initial, 'rack', 46, 2), /hors/)
   assert.throws(() => editLayout(initial, 'station', 3, 2), /paires/)
-  assert.throws(() => editLayout(initial, 'erase', 3, 2), /paires/)
+  assert.deepEqual(editLayout(added, 'erase', 3, 2), initial, 'la gomme retire la travée dont le rayonnage couvre la cellule')
+  assert.deepEqual(editLayout(added, 'erase', 1, 3), added, 'cellule voisine : rien à retirer')
+  // Remplissage automatique : rangées et stations réparties jusqu'au bord droit (plus de colonne vide).
+  const spread = regularLayout(48, 32, 8, 24, 4, 4)
+  assert.deepEqual([...new Set(spread.racks.map((p) => p.x))], [4, 10, 16, 22, 26, 32, 38, 44])
+  assert.deepEqual(spread.stations.map((p) => p.x), [0, 16, 30, 46])
   const removed = editLayout(added, 'erase', 2, 2)
   assert.deepEqual(removed, initial)
   const station = editLayout(initial, 'station', 0, 0)
