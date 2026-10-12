@@ -2,21 +2,23 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { analyzeFleet, runReplication } from '../src/sim/campaign.ts'
+import { expected, resetPlan } from './plans.mjs'
 
 export async function checkClassic({ page, measure, assertRenderedPlan }) {
   const editor = page.locator('section[aria-labelledby="editor-title"]')
   await page.getByRole('button', { name: 'Construire', exact: true }).click()
   const generation = { value: () => editor.locator('[name="architecture"]:checked').inputValue(), el: editor.locator('[name="architecture"]').first(),
     select: (g) => editor.locator(`[name="architecture"][value="${g === '2025+' ? 'skypod' : g}"]`).check() }
-  await editor.locator('[data-preset="dense"]').click()
   await editor.locator('[name="architecture"][value="skypod"]').focus()
   await page.keyboard.press('ArrowRight')
   assert.equal(await generation.value(), 'classic', 'choix de génération au clavier')
+  const plan = expected('classic-back')
+  await editor.locator('[data-preset="classic-back"]').click()
   await editor.locator('[name="width"]').fill('1000000000')
   assert.equal(await editor.locator('[name="width"]').getAttribute('aria-invalid'), 'true', 'largeur hors bornes non signalée')
   await editor.locator('svg.plan[aria-label^="Plan 48 par 32"]').waitFor()
   await editor.locator('[name="width"]').fill('48')
-  await editor.locator('.plan-metrics').filter({ hasText: '768 emplacements · sol libre 75 % · 284 robots au plus' }).waitFor()
+  await editor.locator('.plan-metrics').filter({ hasText: `${plan.slots} emplacements · sol libre ${Math.round(plan.freeShare * 100)} % · ${plan.fleet} robots au plus` }).waitFor()
   await generation.el.scrollIntoViewIfNeeded()
   await page.screenshot({ path: fileURLToPath(new URL('./editor-classic.png', import.meta.url)) })
   const save = async (name) => {
@@ -31,7 +33,7 @@ export async function checkClassic({ page, measure, assertRenderedPlan }) {
   assert.equal(await generation.value(), 'classic', 'annulation restaure la génération')
   // Erreur de placement récupérable : l'accès d'une travée n'est pas un emplacement de station.
   await editor.getByRole('button', { name: 'Station', exact: true }).click()
-  await editor.locator('[data-cell="2,2"]').click()
+  await editor.locator('[data-cell="4,2"]').click()
   await editor.getByRole('alert').filter({ hasText: 'chevauchent' }).waitFor()
   const unchanged = await page.evaluate(() => JSON.stringify(window.kinesis.sim.layout))
   await editor.getByLabel('Robots', { exact: true }).fill('301')
@@ -70,7 +72,7 @@ export async function checkClassic({ page, measure, assertRenderedPlan }) {
     }
     return cells.length
   })
-  assert.equal(marked, 192)
+  assert.equal(marked, plan.blocked, 'rayonnages et dos à dos bloqués au sol')
   const memory = () => page.evaluate(() => ({ ...window.kinesisView.gl.info.memory }))
   const classicMemory = await memory()
   assert.ok(await page.locator('.panel summary').textContent().then((s) => s.includes('classique')))
@@ -117,11 +119,7 @@ export async function checkClassic({ page, measure, assertRenderedPlan }) {
     await measure(.2)
     assert.deepEqual(await memory(), next === 'classic' ? classicMemory : modernMemory, 'ressources GPU accumulées au changement de génération')
   }
-  await page.getByRole('button', { name: 'Construire', exact: true }).click()
-  await page.locator(`[data-preset=\"${'demo'}\"]`).click()
-  await editor.getByLabel('Robots', { exact: true }).fill('20')
-  await editor.getByRole('button', { name: 'Appliquer le plan →' }).click()
-  await page.waitForFunction(() => window.kinesis.mesh.count === 20 && window.kinesis.sim.columns.length === 64)
+  await resetPlan(page)
   await page.setViewportSize({ width: 1280, height: 800 })
   console.log(`Classique vérifié : clavier, annulation, erreurs, persistance, emprise, pause, comparaison/export Worker–Node, mobile, ressources GPU stables ; 72 robots, ${stats.fps.toFixed(1)} images/s, p95 ${stats.p95.toFixed(1)} ms, max ${stats.max.toFixed(1)} ms`)
   return { ...stats, marked, classicMemory, modernMemory, configurations: configurations.map((c) => ({ name: c.name, generation: c.layout.generation })) }

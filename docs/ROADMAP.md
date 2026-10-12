@@ -27,6 +27,8 @@ pas le solveur.
   Le 12 octobre : rangées continues (une travée par ligne), plans prêts densifiés ;
   limite de pilotage fenêtre/RHCR mesurée et documentée dans `docs/VALIDATION.md` ;
   en 2025+, passage au sol sous un robot en montée (accès traversable).
+  Puis travée Exotec rayonnage | allée | rayonnage (brevet US11208264B2), modèles par
+  technologie et tracé ligne/zone dans Concevoir ; dépôt public github.com/alanmlcrt/kinesis.
 
 - [ ] **Parcours, comparaison et missions (proposition validée le 12 octobre).** Étapes,
   une à la fois :

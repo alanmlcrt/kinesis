@@ -105,13 +105,13 @@ test('prise et dépôt au bon niveau, conservation des bacs et passage sous rack
     }
     for (const r of s.robots) {
       if (r.level === 0 && r.pathIndex < r.pathLength && r.z >= 7 && r.z <= 23 &&
-          [8, 18, 28, 38].includes(r.x) && s.floor[r.z * s.width + r.x] === 'lane') underRack = true
+          [5, 7, 15, 17, 25, 27, 35, 37].includes(r.x) && s.floor[r.z * s.width + r.x] === 'lane') underRack = true
     }
   }
   assert.ok(takes > 0 && puts > 0)
   assert.ok(underRack, 'aucun passage sous rack')
-  assert.equal(s.bins.length, 256)
-  assert.equal(new Set(s.bins.map((b) => b.id)).size, 256)
+  assert.equal(s.bins.length, 512)
+  assert.equal(new Set(s.bins.map((b) => b.id)).size, 512)
   assert.ok(s.robots.every((r) => r.returns > 0), 'un robot n’a jamais fini son cycle')
 })
 

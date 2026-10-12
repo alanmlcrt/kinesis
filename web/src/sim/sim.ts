@@ -13,8 +13,9 @@ export type Phase = 'idle' | 'toRack' | 'engageTake' | 'upTake' | 'take' | 'down
   'bufferToStation' | 'toStation' | 'service' | 'bufferToReturn' | 'toReturn' |
   'engagePut' | 'upPut' | 'put' | 'downPut' | 'home'
 export type Position = { x: number; y: number; z: number }
-export type Column = { cell: number; stockX: number; stockZ: number; owner: number }
-export type Bin = { id: number; column: number; level: number; carrier: number; reservedBy: number; bufferBy: number; bufferLevel: number }
+export type Column = { cell: number; owner: number }
+// side : −1 rayonnage à gauche de l'allée de grimpe, +1 à droite, 0 pile AutoStore.
+export type Bin = { id: number; column: number; level: number; side: number; carrier: number; reservedBy: number; bufferBy: number; bufferLevel: number }
 export type Robot = {
   id: number; x: number; z: number; level: number; home: number; station: number
   phase: Phase; progress: number; bin: number; column: number; returns: number; visits: number
@@ -70,9 +71,10 @@ export function createSim(seed: number, count = 20, layout: Layout = DEFAULT_LAY
   for (const { x, z } of plan.racks) {
       const cell = z * width + x
       const column = s.columns.length
-      s.columns.push({ cell, stockX: x + (plan.profile === 'autostore' ? 0 : GEOMETRY.stockOffsetX), stockZ: z, owner: -1 })
-      for (let level = 1; level <= levels; level++) {
-        s.bins.push({ id: s.bins.length, column, level, carrier: -1, reservedBy: -1, bufferBy: -1, bufferLevel: 0 })
+      s.columns.push({ cell, owner: -1 })
+      // Skypod : le robot grimpe entre deux rayonnages face à face et sert un bac de chaque côté.
+      for (const side of plan.profile === 'autostore' ? [0] : [-1, 1]) for (let level = 1; level <= levels; level++) {
+        s.bins.push({ id: s.bins.length, column, level, side, carrier: -1, reservedBy: -1, bufferBy: -1, bufferLevel: 0 })
       }
   }
   if (plan.fill < 100) {
@@ -300,8 +302,8 @@ export function binPosition(s: State, b: Bin, out: Position): void {
     out.y += GEOMETRY.carriedBinOffsetY
   } else {
     const home = b.bufferBy === -1 ? -1 : s.robots[b.bufferBy].home
-    out.x = home === -1 ? col.stockX : home % s.width
-    out.z = home === -1 ? col.stockZ : Math.floor(home / s.width)
+    out.x = home === -1 ? col.cell % s.width + b.side * GEOMETRY.stockOffsetX : home % s.width
+    out.z = home === -1 ? Math.floor(col.cell / s.width) : Math.floor(home / s.width)
     out.y = s.layout.profile === 'autostore' ? elevation(s, b.bufferBy === -1 ? b.level : b.bufferLevel) + .25 : b.level * LEVEL_HEIGHT + GEOMETRY.robotCenterY + GEOMETRY.carriedBinOffsetY
   }
   if (handler?.bin === b.id && (handler.phase === 'take' || handler.phase === 'put')) {
@@ -316,7 +318,7 @@ export function binPosition(s: State, b: Bin, out: Position): void {
       return
     }
     const f = handler.progress / HANDLING_STEPS
-    const x = col.cell % s.width
-    out.x = handler.phase === 'take' ? col.stockX + (x - col.stockX) * f : x + (col.stockX - x) * f
+    const x = col.cell % s.width, stock = x + b.side * GEOMETRY.stockOffsetX
+    out.x = handler.phase === 'take' ? stock + (x - stock) * f : x + (stock - x) * f
   }
 }

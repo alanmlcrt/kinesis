@@ -25,6 +25,29 @@ compréhension, sans garantir les détails de fabrication du produit actuel.
 Ne pas déduire qu'une case sous rack est toujours traversable : les montants,
 les obstacles et l'encombrement du robot doivent être pris en compte.
 
+## Travée : allée de grimpe entre deux rayonnages (12 octobre 2026)
+
+Relecture du brevet délivré [7] (même invention que [5]) à la demande de l'utilisateur :
+- le robot grimpe « between two facing shelves along their uprights » ; ses bras dentés
+  s'engagent sur les montants « of the rack 32 and the rack 33 facing the latter » :
+  l'allée de grimpe est bordée par deux rayonnages face à face ;
+- le support coulisse vers une première position déployée, une position rentrée et une
+  seconde position déployée de l'autre côté du châssis (revendication 1) : « pick up
+  containers from shelves on either side of the trolley » ;
+- le support sort entièrement du châssis d'un côté : une seule profondeur de bac. Rien
+  dans le brevet n'établit un stockage sur deux profondeurs (un intégrateur évoque un
+  double fond avec repositionnement ; non modélisé, non vérifié auprès d'Exotec).
+
+Modèle Kinesis : **une travée = rayonnage | allée de grimpe | rayonnage** (3 cellules),
+un bac de chaque côté par niveau. Deux allées voisines sont au moins à 4 cellules
+(rayonnages dos à dos). En 2025+, on circule au sol sous les rayonnages et dans l'allée,
+y compris sous un robot qui grimpe ; en classique, les rayonnages sont pleins au sol
+(dos à dos jointifs) et l'on circule par les allées et les transversales. Ni le brevet
+ni les pages Exotec ne donnent largeur d'allée, gabarit du robot, ni règle de croisement :
+ce sont des hypothèses du simulateur. Une demande Exotec de 2025 (publication
+20260176063, résumé seul consulté) décrit des rayonnages espacés formant des allées et
+des emplacements de transit sous les rayonnages ; elle n'est pas modélisée.
+
 ## Sol, allées et grille du simulateur
 
 Les robots circulent au sol puis accèdent verticalement au stockage. Exotec
@@ -100,7 +123,7 @@ affirmée en mètres. Les durées sont des choix illustratifs, sans calibration 
 | Chemins de grimpe | 32 chemins, un par travée ; le bac est à droite du robot dans cette implantation illustrative. |
 | Hauteur entre niveaux | 1,4 unité ; première tablette au-dessus de l'encombrement d'un robot chargé au sol. |
 | Robot | Enveloppe horizontale de 0,7 × 0,7 unité ; bac de 0,68 × 0,455 × 0,73 unité. Les enveloppes sont contrôlées sur les géométries rendues. |
-| Travée | 2 cellules (modèle du 11 octobre 2026), rangées continues sur toutes les lignes depuis le 12 octobre : accès de grimpe puis stockage à droite ; plus de case de montant bloquée. Montants de guidage aux coins des deux cellules, hors de l'enveloppe du robot. |
+| Travée | 3 cellules depuis le 12 octobre 2026 : rayonnage, allée de grimpe, rayonnage ; un bac de chaque côté par niveau [7] ; rangées continues. Montants aux coins de l'allée et aux bords extérieurs des rayonnages, hors de l'enveloppe du robot. |
 | Stations | 4 baies au sol, plaque et rouleaux latéraux hors du passage des roues ; représentation illustrative. |
 | Temps | Pas fixe 0,1 s ; 5 pas par cellule, 10 pas par niveau, 5 pas d'engagement, 8 pas de prise/dépôt/service. |
 
@@ -198,5 +221,6 @@ ne démontre donc pas les performances d'installations réelles ni de Deepsky.
 4. [Exotec — navigation des robots, fiche britannique](https://www.exotec.com/en-gb/system/automated-warehouse-robots/).
 5. [Brevet Exotec US20200122923A1 — description et figures 3A–3D](https://patents.google.com/patent/US20200122923A1/en).
 6. [Brevet Exotec FR3140876A1 — crémaillère et montants](https://patents.google.com/patent/FR3140876A1/fr).
+7. [Brevet Exotec US11208264B2 — revendications et description (support des deux côtés, rayonnages face à face)](https://patents.google.com/patent/US11208264B2/en).
 7. [Exotec — fiche actuelle des racks](https://www.exotec.com/system/warehouse-storage-solutions/).
 8. [Communiqué Exotec du 22 juin 2023 — définition d'un cycle](https://www.prnewswire.com/news-releases/exotec-robots-save-warehouse-workers-from-walking-nearly-18-million-miles-according-to-official-data-301857777.html).

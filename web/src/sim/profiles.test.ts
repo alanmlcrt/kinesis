@@ -54,8 +54,8 @@ test('profils : plans indépendants, conservation JSON, validation et édition d
   assert.equal(auto.generation, undefined); assert.equal(auto.lifts, undefined)
   assert.equal(layoutFloor(lifts).length, 4 * 256)
   assert.equal(layoutMetrics(auto).freeShare, 1 - 6 / 256)
-  assert.equal(layoutMetrics(auto).slots, layoutMetrics(lifts).slots)
-  assert.deepEqual(editLayout(editLayout(auto, 'rack', 4, 2), 'erase', 4, 2).racks, auto.racks, 'Effacer une pile ne retire pas sa voisine')
+  assert.equal(layoutMetrics(auto).slots * 2, layoutMetrics(lifts).slots, 'une pile par cellule contre deux rayonnages par allée')
+  assert.deepEqual(editLayout(editLayout(auto, 'rack', 6, 2), 'erase', 6, 2).racks, auto.racks, 'Effacer une pile ne retire pas sa voisine')
   const added = editLayout(lifts, 'lift', 0, 2)
   assert.equal(added.lifts!.length, 3); assert.equal(lifts.lifts!.length, 2)
   assert.equal(editLayout(added, 'erase', 0, 2).lifts!.length, 2)
@@ -150,8 +150,8 @@ test('profils à 300 robots : sécurité, conservation et budgets', () => {
 
 test('campagnes : trois profils, bases explicites et réplications déterministes', () => {
   const configurations = (['skypod', 'lifts', 'autostore'] as const).map((profile) => ({ name: profile, layout: withProfile(base, profile) }))
-  const p = { configurations, base: 'capacity' as const, fleets: [2], replications: 2, seconds: 800, seed: 3 }
-  validateCampaign(p); validateCampaign({ ...p, base: 'footprint' })
+  const p = { configurations, base: 'footprint' as const, fleets: [2], replications: 2, seconds: 800, seed: 3 }
+  validateCampaign(p); assert.throws(() => validateCampaign({ ...p, base: 'capacity' }), /Capacités différentes/)
   assert.throws(() => validateCampaign({ ...p, base: null }))
   for (const c of configurations) assert.deepEqual(runReplication(c.layout, 2, 3, 800), runReplication(c.layout, 2, 3, 800))
 })

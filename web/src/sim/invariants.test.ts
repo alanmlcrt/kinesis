@@ -27,7 +27,7 @@ function assertState(s: State): void {
       assert.equal(reserved[next], -1, 'réservation double')
       assert.equal(s.occupied[next], -1, 'trajet occupé')
       assert.notEqual(s.floor[next], 'blocked')
-      if (i < r.pathLength - 1) assert.ok(s.floor[next] === 'lane' || s.floor[next] === 'column' && s.layout.generation !== 'classic', 'transit hors voie')
+      if (i < r.pathLength - 1) assert.ok(s.floor[next] === 'lane' || s.floor[next] === 'column', 'transit hors voie')
       reserved[next] = r.id; previous = next
     }
   }
@@ -39,7 +39,7 @@ function assertState(s: State): void {
   for (const [id, b] of s.bins.entries()) {
     assert.equal(b.id, id)
     assert.ok(b.column >= 0 && b.column < s.columns.length && b.level >= 1 && b.level <= s.levels)
-    const slot = `${b.column}:${b.level}`
+    const slot = `${b.column}:${b.level}:${b.side}`
     assert.ok(!slots.has(slot), 'emplacement de bac dupliqué'); slots.add(slot)
     if (b.reservedBy !== -1) assert.equal(s.robots[b.reservedBy].bin, id)
     if (b.carrier !== -1) {

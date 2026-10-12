@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { chromium, firefox } from 'playwright'
 import { fileURLToPath } from 'node:url'
 import { regularLayout } from '../src/sim/layout.ts'
+import { expected, resetPlan } from './plans.mjs'
 
 export async function checkRemaining({ browser, page, PAGE, measure, assertRenderedPlan, errors }) {
   const report = { editor: [], speeds: [], stress: [], touch: [], browsers: [], camera: false }
@@ -46,8 +47,8 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
     'Travées / rangée': 1, Stations: 1, Niveaux: 1, 'Remplissage (%)': 100, Robots: 1 })
   await editor.getByRole('button', { name: 'Générer le plan' }).click()
   await editor.getByRole('button', { name: 'Gomme', exact: true }).click()
-  await use(2, 2)
-  await editor.getByRole('alert').filter({ hasText: '1 à 512' }).waitFor()
+  await use(4, 2) // la seule travée : première allée en x = 4
+  await editor.getByRole('alert').filter({ hasText: '1 à 2 500' }).waitFor()
   assert.equal(await editor.locator('.plan-rack').count(), 1)
   await use(0, 14)
   await editor.getByRole('alert').filter({ hasText: '1 à 12' }).waitFor()
@@ -72,16 +73,19 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
     assert.ok(Math.abs(sample.ticks - speed * sample.seconds / .1) <= 2, `vitesse ${speed}× : ${JSON.stringify(sample)}`)
     report.speeds.push({ speed, ...sample })
   }
-  await open(); await editor.locator(`[data-preset=\"${'dense'}\"]`).click()
+  await open(); await editor.locator('[data-preset="skypod-dense"]').click()
   await fields({ Robots: 20 }); await apply()
-  await page.waitForFunction(() => window.kinesis.sim.columns.length === 192)
+  await page.waitForFunction((n) => window.kinesis.sim.columns.length === n, expected('skypod-dense').columns)
   assert.equal(await page.evaluate(() => window.kinesis.sim.tick), 0)
   assert.equal(await page.getByRole('button', { name: 'Lecture', exact: true }).count(), 1)
   await assertRenderedPlan(); report.editor.push('passer par Concevoir met en pause ; plan appliqué prêt à lancer à t = 0')
 
-  for (const [preset, count] of [['dense', 220], ['large', 300], ['maximum', 300]]) {
+  for (const [preset, count, width, depth, levels] of [['skypod-dense', 220, 48, 32, 4], ['skypod-balanced', 300, 64, 40, 6], ['maximum', 300]]) {
     await open()
-    if (preset !== 'maximum') await editor.locator(`[data-preset=\"${preset}\"]`).click()
+    if (preset !== 'maximum') {
+      await fields({ 'Largeur (cellules)': width, 'Profondeur (cellules)': depth, Niveaux: levels })
+      await editor.locator(`[data-preset="${preset}"]`).click()
+    }
     else {
       await fields({ 'Largeur (cellules)': 80, 'Profondeur (cellules)': 64, Rangées: 12,
         'Travées / rangée': 20, Stations: 12, Niveaux: 8, 'Remplissage (%)': 100 })
@@ -138,10 +142,7 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
       await mobile.reload(); await mobile.waitForFunction(() => window.kinesis?.sim.stations.length === 5)
       assert.equal(await mobile.getByRole('button', { name: 'Lecture', exact: true }).count(), 1)
       // Revenir au plan initial pour le prochain format d'écran.
-      await mobile.getByRole('button', { name: 'Construire', exact: true }).tap()
-      await mobile.locator(`[data-preset=\"${'demo'}\"]`).click()
-      await mobile.getByRole('button', { name: 'Appliquer le plan →' }).tap()
-      await mobile.waitForFunction(() => window.kinesis.sim.stations.length === 4)
+      await resetPlan(mobile)
       report.touch.push(viewport)
     }
   } finally { await touch.close() }
@@ -172,7 +173,7 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
       await probe.reload(); await probe.waitForFunction(() => window.kinesis?.mesh.count === 2)
       assert.equal(await probe.evaluate(() => window.kinesis.sim.seed), 0xffffffff)
       assert.equal(await probe.evaluate(() => window.kinesis.sim.levels), 3)
-      assert.equal(await probe.evaluate(() => window.kinesis.sim.bins.length), 1)
+      assert.equal(await probe.evaluate(() => window.kinesis.sim.bins.length), 3, '1 travée × 3 niveaux × 2 côtés × 50 %')
       await probe.screenshot({ path: fileURLToPath(new URL(`./browser-${name.toLowerCase()}.png`, import.meta.url)) })
       report.browsers.push({ name, version: engine.version(), cycle: true, pause: true, seedAndPlanRestored: true })
     } finally { await engine.close() }

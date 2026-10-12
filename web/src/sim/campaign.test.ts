@@ -77,9 +77,9 @@ test('paramètres de campagne refusés', () => {
 test('base de normalisation : obligatoire pour comparer, vérifiée sur les plans', () => {
   const p = { fleets: [20], replications: 2, seconds: 3600, seed: 1 }
   assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: null }), /base de normalisation/)
-  // Démo et Compact : même emprise 48 × 32, capacités 256 et 768 emplacements.
+  // Démo et Compact : même emprise 48 × 32, capacités 512 et 1 536 emplacements.
   validateCampaign({ ...p, configurations: [demo, dense], base: 'footprint' })
-  assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: 'capacity' }), /Démo 256, Compact 768/)
+  assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: 'capacity' }), /Démo 512, Compact 1536/)
   assert.throws(() => validateCampaign({ ...p, configurations: [demo, large], base: 'footprint' }), /Emprises différentes/)
   validateCampaign({ ...p, configurations: [demo, dense, large], base: 'pareto' })
   validateCampaign({ ...p, configurations: [demo, { name: 'Démo bis', layout: { ...DEFAULT_LAYOUT, fill: 50 } }], base: 'capacity' })

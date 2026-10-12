@@ -19,9 +19,8 @@ export function neighbors(s: State, c: number): number[] {
 }
 export const nodeOf = (s: State, r: Robot) => r.z * s.width + r.x + (s.layout.profile === 'lifts' ? r.level * s.width * s.depth : 0)
 export const moveSteps = (s: State, from: number, to: number) => s.layout.profile === 'lifts' && Math.abs(to - from) === s.width * s.depth ? s.layout.liftSteps! : STEPS_PER_CELL
-// Skypod 2025+ : l'accès de grimpe se traverse au sol, même pendant qu'un robot grimpe au-dessus.
-const transit = (s: State, n: number) => s.floor[n] === 'lane' || s.floor[n] === 'lift' || s.floor[n] === 'column' &&
-  (s.layout.profile === 'autostore' || (s.layout.profile ?? 'skypod') === 'skypod' && s.layout.generation !== 'classic')
+// Skypod : l'allée de grimpe se traverse au sol, même pendant qu'un robot grimpe au-dessus.
+const transit = (s: State, n: number) => s.floor[n] === 'lane' || s.floor[n] === 'lift' || s.floor[n] === 'column' && s.layout.profile !== 'lifts'
 const shaftFree = (s: State, n: number, id: number) => !s.lifts.some((l) => l.cell === n % (s.width * s.depth) && l.owner !== -1 && l.owner !== id)
 
 // BFS libre également utilisé par le moteur pour mesurer les détours.

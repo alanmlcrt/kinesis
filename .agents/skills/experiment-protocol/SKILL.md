@@ -41,10 +41,11 @@ précision.
   espace-temps pour éviter un conflit compte aussi, pas à pas à sa case ; elle ne compte
   pas comme déplacement et ne libère pas la colonne. Total rapporté aux trajets libres terminés.
 - **Débit** : tâches terminées par unité de temps simulé, après la chauffe.
-- **Emplacements** : travées × niveaux (capacité de stockage). **Emprise** : largeur × profondeur
+- **Emplacements** : travées × niveaux × 2 (un bac de chaque côté de l'allée de grimpe ;
+  × 1 pour une pile AutoStore) — modèle du 12 octobre 2026. **Emprise** : largeur × profondeur
   du sol, en cases de simulation (non calibrées en mètres).
-- **Sol libre** (étape 7b, modèle du 11 octobre 2026) : 1 − 2 × travées / emprise. Une travée
-  couvre 2 cases (accès de grimpe, stockage ; plus de case de montant) : hypothèse du modèle,
+- **Sol libre** (modèle du 12 octobre 2026) : 1 − 3 × travées / emprise (1 × pour AutoStore).
+  Une travée couvre 3 cases (rayonnage, allée de grimpe, rayonnage) : hypothèse du modèle,
   pas une surface Exotec. Dans Skypod 2025+, le sol sous stockage reste traversable : « libre »
   veut dire « sans stockage au-dessus », pas « seul endroit où l'on circule ».
   En classique, la case de stockage est bloquée au sol et l'accès reste une baie terminale.

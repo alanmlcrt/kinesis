@@ -23,8 +23,18 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 600; }
 .studio h2 { font-size: 13px; margin: 0 0 12px; }
 .board { container-type: inline-size; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 20px; background: var(--panel); border-radius: 20px; box-shadow: var(--shadow); }
 .board-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.presets { display: flex; gap: 8px; flex-wrap: wrap; }
-.preset { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border-radius: 14px; text-align: left; }
+.setup { display: grid; gap: 16px; }
+.setup-step h2 { margin: 0 0 10px; }
+.setup-step h2 .meta { display: block; font-weight: 400; margin-top: 2px; }
+.how { margin-top: 8px; max-width: 70ch; }
+.presets { display: grid; gap: 8px; }
+.setup .preset { background: var(--surface); }
+.preset small.purpose { margin-top: 2px; line-height: 1.3; }
+.preset:disabled .purpose { display: none; }
+.mini-empty { width: 52px; height: 36px; border-radius: 6px; background: var(--btn); flex-shrink: 0; }
+.modes { align-self: center; }
+.preset { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border-radius: 14px; text-align: left; background: var(--panel); }
+.preset svg { flex-shrink: 0; }
 .preset svg { width: 52px; height: 36px; display: block; }
 .preset span { display: flex; flex-direction: column; font-weight: 600; }
 .preset small { color: var(--muted); font-weight: 400; }
@@ -48,7 +58,7 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 600; }
 .dimension .stepper { background: var(--accent-soft); border-color: var(--accent); }
 .dimension input { width: 3.2em; color: var(--accent); font-weight: 700; }
 .plan { grid-column: 2; grid-row: 2; display: block; box-sizing: border-box; overflow: visible; touch-action: none; cursor: crosshair; border-radius: 12px;
-  width: min(calc(100cqw - 130px), calc((100dvh - var(--lab-header) - 340px) * var(--ratio))); height: auto; }
+  width: min(calc(100cqw - 130px), calc((100dvh - var(--lab-header) - 260px) * var(--ratio))); height: auto; }
 .plan-ground { fill: var(--plan-ground); }
 .plan-cell { fill: var(--panel); }
 .plan-lane { fill: var(--surface); opacity: .55; }
@@ -118,10 +128,12 @@ dt { color: var(--muted); } dd { margin: 0; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 1000px) {
   .lab-brand span { display: none; }
-  .editor.studio { display: block; overflow: auto; }
-  .board { overflow: visible; }
-  .side { margin-top: 16px; }
-  .side-scroll { overflow: visible; }
+  /* Une colonne : technologie et modèle d'abord, puis la matrice, puis les réglages. */
+  .editor.studio { display: flex; flex-direction: column; gap: 16px; overflow: auto; }
+  .board { overflow: visible; flex-shrink: 0; }
+  .side, .side-scroll { display: contents; }
+  .setup { order: -1; }
+  .side-scroll > :not(.setup), .side-foot { order: 1; }
   .plan { width: calc(100cqw - 130px); }
 }
 @media (max-width: 700px) {

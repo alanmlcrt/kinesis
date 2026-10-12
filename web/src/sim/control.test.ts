@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { DEFAULT_CONTROL, route, validateControl } from './control.ts'
 import { createSim, robotPosition, step, type State, onGround } from './sim.ts'
-import { regularLayout, DEFAULT_LAYOUT } from './layout.ts'
+import { regularLayout, DEFAULT_LAYOUT, PRESETS } from './layout.ts'
 import { runReplication, validateCampaign } from './campaign.ts'
 
 const windowControl = { ...DEFAULT_CONTROL, method: 'window' as const }
@@ -50,7 +50,6 @@ for (const generation of ['2025+', 'classic'] as const) test(`fenêtre ${generat
   const layout = regularLayout(16, 16, 2, 3, 2, 2, 100, 'random', generation)
   // Rangées décalées du bord : un mur classique continu contre le couloir de bordure
   // bloque la fenêtre (aucune garantie de progrès, limite documentée dans VALIDATION.md).
-  if (generation === 'classic') layout.racks = layout.racks.map((p) => ({ ...p, x: p.x === 2 ? 4 : 10 }))
   const s = createSim(3, 4, layout, windowControl), copy = createSim(3, 4, layout, windowControl)
   const positions = s.robots.map((r) => { const out = { x: 0, y: 0, z: 0 }; robotPosition(s, r, out); return out })
   const phases = new Set<string>()
@@ -75,7 +74,7 @@ for (const generation of ['2025+', 'classic'] as const) test(`fenêtre ${generat
 
 test('budget épuisé : attente sûre et reproductible, pas de réservation résiduelle', () => {
   for (const method of ['whole', 'window'] as const) {
-    const s = createSim(0, 20, DEFAULT_LAYOUT, { ...windowControl, method, budget: 100 })
+    const s = createSim(0, 20, PRESETS.large, { ...windowControl, method, budget: 100 })
     for (let i = 0; i < 100; i++) step(s)
     assert.equal(s.controlStats.operations, s.controlStats.searches * 100)
     assert.equal(s.controlStats.exhausted, s.controlStats.searches)

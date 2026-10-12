@@ -1,11 +1,17 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { editLayout, layoutMetrics, PRESETS, regularLayout, resizeLayout, validateLayout, profileLabel, withProfile, type Layout } from './sim/layout.ts'
+import { editLayout, layoutMetrics, regularLayout, resizeLayout, TEMPLATES, templateLayout, validateLayout, profileLabel, withProfile, type Architecture, type Layout } from './sim/layout.ts'
 import { loadPlans, savePlans } from './preferences.ts'
 
 type Tool = 'rack' | 'station' | 'lift' | 'erase'
-type Architecture = 'skypod' | 'classic' | 'lifts' | 'autostore'
+type Mode = 'point' | 'line' | 'area'
 const ARCHITECTURES: [Architecture, string][] = [['skypod', 'Skypod 2025+'], ['classic', 'Skypod classique'], ['lifts', 'Ascenseurs'], ['autostore', 'AutoStore']]
-const PRESET_NAMES = { demo: 'Démonstration', dense: 'Compact', large: 'Étendu' } as const
+// Ce qu'il faut savoir d'une technologie pour la configurer ; hypothèses détaillées dans docs/SKYPOD.md et docs/PROFILES.md.
+const HOW: Record<Architecture, string> = {
+  skypod: 'Le robot roule au sol, passe sous les rayonnages et grimpe dans l’allée entre deux rayonnages face à face : un bac de chaque côté par niveau.',
+  classic: 'Même robot grimpeur, mais le sol sous les rayonnages est plein : on circule seulement dans les allées et par les transversales.',
+  lifts: 'Robots par étage ; des gaines d’ascenseur relient les étages, une gaine pour un robot à la fois. Placer 1 à 8 gaines.',
+  autostore: 'Piles de bacs en grille ; les robots roulent au sommet, creusent la pile et restituent les bacs. Ports en bordure.',
+}
 const architecture = (l: Layout): Architecture => l.profile === 'lifts' || l.profile === 'autostore' ? l.profile : l.generation === 'classic' ? 'classic' : 'skypod'
 
 function Stepper({ id, label, value, min, max, step = 1, onChange }: { id: string; label: string; value: string; min: number; max: number; step?: number; onChange: (v: string) => void }) {
@@ -25,7 +31,7 @@ function Pills<T extends string>({ name, legend, value, options, onChange }: { n
 function MiniPlan({ layout }: { layout: Layout }) {
   return <svg viewBox={`0 0 ${layout.width} ${layout.depth}`} aria-hidden="true">
     <rect className="mini-floor" width={layout.width} height={layout.depth} rx="2" />
-    {layout.racks.map((p) => <rect key={`${p.x}-${p.z}`} className="mini-rack" x={p.x} y={p.z} width="2" height="1" />)}
+    {layout.racks.map((p) => <rect key={`${p.x}-${p.z}`} className="mini-rack" x={layout.profile === 'autostore' ? p.x : p.x - 1} y={p.z} width={layout.profile === 'autostore' ? 1 : 3} height="1" />)}
     {layout.stations.map((p) => <rect key={`${p.x}-${p.z}`} className="mini-station" x={p.x} y={p.z} width="1.6" height="1.6" />)}
   </svg>
 }
@@ -44,6 +50,8 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
   const [liftSteps, setLiftSteps] = useState(String(layout.liftSteps ?? 15))
   const [storage, setStorage] = useState(layout.storage)
   const [tool, setTool] = useState<Tool>('rack')
+  const [mode, setMode] = useState<Mode>('point')
+  const [shape, setShape] = useState<{ start: { x: number; z: number }; end: { x: number; z: number } } | null>(null)
   const [cursor, setCursor] = useState({ x: 2, z: 2 })
   const [hover, setHover] = useState<{ x: number; z: number } | null>(null)
   const [frame, setFrame] = useState<{ w: number; d: number } | null>(null)
@@ -53,7 +61,7 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
   const svg = useRef<SVGSVGElement>(null)
   const current = useRef(draft); current.current = draft
   // Geste en cours : peinture d'outil, ou poignée de redimensionnement (base figée au début du geste).
-  const gesture = useRef<{ kind: 'paint'; last: string } | { kind: 'resize'; axis: 'x' | 'z' | 'xz'; x: number; y: number; scale: number; base: Layout } | null>(null)
+  const gesture = useRef<{ kind: 'paint'; last: string } | { kind: 'shape' } | { kind: 'resize'; axis: 'x' | 'z' | 'xz'; x: number; y: number; scale: number; base: Layout } | null>(null)
 
   const commit = (plan: Layout, record = true) => {
     const previous = current.current
@@ -79,7 +87,7 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
   const cellAt = (e: PointerEvent) => {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.current!.getScreenCTM()!.inverse())
     // Travées et gomme sur toutes les lignes ; stations et gaines sur les lignes paires.
-    const x = Math.floor(p.x / 2) * 2, z = tool === 'rack' || tool === 'erase' ? Math.floor(p.y) : Math.floor(p.y / 2) * 2
+    const fine = tool === 'rack' || tool === 'erase', x = fine && current.current.profile === 'autostore' ? Math.floor(p.x) : Math.floor(p.x / 2) * 2, z = fine ? Math.floor(p.y) : Math.floor(p.y / 2) * 2
     return x >= 0 && z >= 0 && x < current.current.width && z < current.current.depth ? { x, z } : null
   }
   const down = (e: PointerEvent<SVGSVGElement>) => {
@@ -93,8 +101,8 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     } else {
       const cell = cellAt(e)
       if (!cell) return
-      gesture.current = { kind: 'paint', last: `${cell.x},${cell.z}` }
-      use(cell.x, cell.z)
+      if (mode === 'point') { gesture.current = { kind: 'paint', last: `${cell.x},${cell.z}` }; use(cell.x, cell.z) }
+      else { gesture.current = { kind: 'shape' }; setShape({ start: cell, end: cell }); setCursor(cell) }
     }
     svg.current!.setPointerCapture(e.pointerId)
   }
@@ -109,9 +117,27 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     }
     const cell = cellAt(e)
     setHover(cell)
+    if (g?.kind === 'shape' && cell) setShape((sh) => sh && { ...sh, end: cell })
     if (g?.kind === 'paint' && cell && `${cell.x},${cell.z}` !== g.last) { g.last = `${cell.x},${cell.z}`; use(cell.x, cell.z, false, true) }
   }
-  const up = () => { gesture.current = null; setFrame(null) }
+  // Ligne (horizontale ou verticale selon le geste) ou zone : chaque position suit l'outil, un seul pas d'annulation.
+  const shapeCells = (start: { x: number; z: number }, end: { x: number; z: number }) => {
+    const sx = draft.profile === 'autostore' ? (tool === 'station' ? 2 : 1) : tool === 'rack' ? 4 : 2, sz = tool === 'rack' || tool === 'erase' ? 1 : 2
+    const range = (a: number, b: number, step: number) => { const out: number[] = []; for (let v = a; b >= a ? v <= b : v >= b; v += b >= a ? step : -step) out.push(v); return out }
+    if (mode === 'line') return Math.abs(end.x - start.x) >= Math.abs(end.z - start.z)
+      ? range(start.x, end.x, sx).map((x) => ({ x, z: start.z })) : range(start.z, end.z, sz).map((z) => ({ x: start.x, z }))
+    return range(start.x, end.x, sx).flatMap((x) => range(start.z, end.z, sz).map((z) => ({ x, z })))
+  }
+  const up = () => {
+    if (gesture.current?.kind === 'shape' && shape) {
+      let plan = current.current, done = 0, skipped = 0
+      for (const p of shapeCells(shape.start, shape.end)) { try { plan = editLayout(plan, tool, p.x, p.z); done++ } catch { skipped++ } }
+      if (plan !== current.current) commit(plan)
+      setNotice(`${done} position${done > 1 ? 's' : ''} traitée${done > 1 ? 's' : ''}${skipped ? ` · ${skipped} ignorée${skipped > 1 ? 's' : ''} (occupée ou hors règles)` : ''}.`)
+      setShape(null)
+    }
+    gesture.current = null; setFrame(null)
+  }
   const key = (e: KeyboardEvent<SVGSVGElement>) => {
     const dx = e.key === 'ArrowRight' ? 2 : e.key === 'ArrowLeft' ? -2 : 0
     const row = tool === 'rack' || tool === 'erase' ? 1 : 2
@@ -134,11 +160,16 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
       validateLayout(plan); commit(plan); setTool('rack')
     } catch (e) { fail(e) }
   }
-  const usePreset = (value: keyof typeof PRESETS) => {
-    const plan = PRESETS[value]
-    if (tool === 'lift') setTool('rack')
-    commit(plan); setLiftSteps(String(plan.liftSteps ?? 15)); setStorage(plan.storage); setCursor({ x: 2, z: 2 })
-    setFields((f) => ({ ...f, levels: String(plan.levels), fill: String(plan.fill), stations: String(plan.stations.length) }))
+  const arch = architecture(draft)
+  const templates = useMemo(() => TEMPLATES.filter((t) => t.architecture === arch).map((t) => {
+    try { const plan = templateLayout(t.id, draft.width, draft.depth, Number(fields.levels) || 1, Number(fields.stations) || 1); return { ...t, plan, metrics: layoutMetrics(plan), error: '' } }
+    catch (e) { return { ...t, plan: null, metrics: null, error: (e as Error).message } }
+  }), [arch, draft.width, draft.depth, fields.levels, fields.stations])
+  const useTemplate = (plan: Layout) => {
+    try {
+      const next = { ...plan, fill: Number(fields.fill), storage, ...(plan.profile === 'lifts' ? { liftSteps: Number(liftSteps) } : {}) }
+      validateLayout(next); commit(next); setTool('rack'); setCursor({ x: 2, z: 2 })
+    } catch (e) { fail(e) }
   }
   const build = () => {
     try {
@@ -168,15 +199,14 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     <div className="board">
       <header className="board-head">
         <div><h1 id="editor-title" tabIndex={-1}>Concevoir l’entrepôt</h1><p className="meta">{profileLabel(draft)} · implantation illustrative · dimensions en cellules de simulation</p></div>
-        <div className="presets" role="group" aria-label="Plans prêts à l’emploi">
-          {(Object.keys(PRESETS) as (keyof typeof PRESETS)[]).map((p) => <button key={p} type="button" data-preset={p} className="preset" onClick={() => usePreset(p)}>
-            <MiniPlan layout={PRESETS[p]} /><span>{PRESET_NAMES[p]}<small>{new Set(PRESETS[p].racks.map((r) => r.x)).size} rangées</small></span></button>)}
-        </div>
       </header>
       <div className="toolbar">
         <div className="tools" role="group" aria-label="Outil de placement">
           {(['rack', 'station', ...(draft.profile === 'lifts' ? ['lift'] as const : []), 'erase'] as const).map((t) => <button key={t} type="button" className={`tool tool-${t}`} aria-pressed={tool === t} onClick={() => setTool(t)}>
             <i aria-hidden="true" />{t === 'rack' ? (autostore ? 'Pile' : 'Travée') : t === 'station' ? 'Station' : t === 'lift' ? 'Ascenseur' : 'Gomme'}</button>)}
+        </div>
+        <div className="seg modes" role="group" aria-label="Tracé">
+          {([['point', 'Point'], ['line', 'Ligne'], ['area', 'Zone']] as const).map(([m, text]) => <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>{text}</button>)}
         </div>
         <button type="button" className="undo" disabled={!history.length} onClick={() => {
           const previous = history[history.length - 1]
@@ -207,36 +237,42 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
           {/* Une case = une cellule du moteur ; emplacements aux coordonnées paires, voies entre eux. */}
           {Array.from({ length: draft.width * draft.depth }, (_, i) => {
             const x = i % draft.width, z = Math.floor(i / draft.width), slot = x % 2 === 0 && z % 2 === 0
-            return <rect key={i} className={slot ? 'plan-cell' : 'plan-lane'} data-cell={x % 2 === 0 ? `${x},${z}` : undefined} x={x + .06} y={z + .06} width=".88" height=".88" rx=".18" />
+            return <rect key={i} className={slot ? 'plan-cell' : 'plan-lane'} data-cell={x % 2 === 0 || autostore ? `${x},${z}` : undefined} x={x + .06} y={z + .06} width=".88" height=".88" rx=".18" />
           })}
           {draft.racks.map((p) => <g key={`r${p.x}-${p.z}`} className="plan-rack">
-            <rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" />{!autostore && <rect className="plan-stock" x={p.x + 1.08} y={p.z + .08} width=".84" height=".84" rx=".2" />}
+            {!autostore && [-1, 1].map((side) => <rect key={side} className="plan-stock" x={p.x + side + .08} y={p.z + .08} width=".84" height=".84" rx=".2" />)}
+            <rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" />
             <text x={p.x + .5} y={p.z + .7} style={{ fontSize: '.6px' }}>{autostore ? 'P' : 'R'}</text></g>)}
           {draft.lifts?.map((p) => <g key={`l${p.x}-${p.z}`} className="plan-station plan-lift"><rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" /><text x={p.x + .5} y={p.z + .7}>L</text></g>)}
           {draft.stations.map((p) => <g key={`s${p.x}-${p.z}`} className="plan-station"><rect x={p.x + .08} y={p.z + .08} width=".84" height=".84" rx=".2" /><text x={p.x + .5} y={p.z + .7}>S</text></g>)}
-          {ghost && !gesture.current && <rect className={`plan-ghost${ghostValid ? '' : ' invalid'}`} x={ghost.x} y={ghost.z}
-            width={tool === 'rack' && !autostore ? 2 : 1} height="1" rx=".25" />}
+          {ghost && !gesture.current && <rect className={`plan-ghost${ghostValid ? '' : ' invalid'}`} x={tool === 'rack' && !autostore ? ghost.x - 1 : ghost.x} y={ghost.z}
+            width={tool === 'rack' && !autostore ? 3 : 1} height="1" rx=".25" />}
+          {shape && shapeCells(shape.start, shape.end).slice(0, 2500).map((p) => <rect key={`g${p.x}-${p.z}`} className="plan-ghost" x={tool === 'rack' && !autostore ? p.x - 1 : p.x} y={p.z}
+            width={tool === 'rack' && !autostore ? 3 : 1} height="1" rx=".25" />)}
           <rect className="plan-cursor" x={cursor.x} y={cursor.z} width="1" height="1" rx=".25" />
           <rect className="handle" data-handle="x" x={draft.width + .5} y={draft.depth / 2 - 2.5} width="1" height="5" rx=".5"><title>Étirer la largeur</title></rect>
           <rect className="handle" data-handle="z" x={draft.width / 2 - 2.5} y={draft.depth + .5} width="5" height="1" rx=".5"><title>Étirer la profondeur</title></rect>
           <circle className="handle" data-handle="xz" cx={draft.width + 1} cy={draft.depth + 1} r=".9"><title>Étirer le sol</title></circle>
         </svg>
       </div>
-      <p id="plan-help" className="meta">Cliquer ou glisser pour peindre avec l’outil ; tirer les poignées pour étirer le sol. Au clavier : flèches puis Entrée. {autostore ? 'Une pile occupe une cellule.' : 'Une travée occupe 2 cellules : accès de grimpe R, puis stockage à droite ; les travées se suivent sur toutes les lignes.'}</p>
+      <p id="plan-help" className="meta">Point : cliquer ou glisser pour peindre. Ligne : glisser, horizontale ou verticale. Zone : glisser un rectangle à remplir. Poignées pour étirer le sol ; au clavier : flèches puis Entrée. {autostore ? 'Une pile occupe une cellule.' : 'Une travée = allée de grimpe R entre deux rayonnages, un bac de chaque côté par niveau ; deux allées voisines sont à 4 cellules (rayonnages dos à dos).'}</p>
       <span className="sr-only" role="status">Emplacement x {cursor.x}, z {cursor.z}.</span>
     </div>
 
     <aside className="side" aria-label="Réglages du plan"><div className="side-scroll">
-      <div className="card">
-        <Pills name="architecture" legend="Architecture" value={architecture(draft)} options={ARCHITECTURES} onChange={setArchitecture} />
-        <p className="meta">{draft.profile === 'lifts' ? 'Un robot par gaine. Un pas = 0,1 s. Placer 1 à 8 gaines sur le plan.'
-          : autostore ? 'Robots au sommet. Bacs extraits par le dessus, puits temporaire privé, pile restituée. Ports abstraits ; modèle non calibré.'
-          : draft.generation === 'classic' ? 'Emprise des travées bloquée au sol, sauf les accès de grimpe en bord d’allée. Hypothèse illustrative.'
-          : 'Circulation sous les racks, hors montants et accès réservés.'}</p>
-        {draft.profile === 'lifts' && <Stepper id="lift-duration" label="Ascenseur · pas par niveau" value={liftSteps} min={5} max={100} step={5} onChange={setLiftSteps} />}
+      <div className="card setup">
+        <div className="setup-step"><Pills name="architecture" legend="1 · Technologie" value={arch} options={ARCHITECTURES} onChange={setArchitecture} />
+          <p className="meta how">{HOW[arch]}</p></div>
+        <div className="setup-step"><h2>2 · Partir d’un modèle <span className="meta">généré sur le sol actuel, {draft.width} × {draft.depth}</span></h2>
+          <div className="presets" role="group" aria-label="Modèles pour cette technologie">
+            {templates.map((t) => <button key={t.id} type="button" data-preset={t.id} className="preset" disabled={!t.plan} title={t.error || t.purpose} onClick={() => t.plan && useTemplate(t.plan)}>
+              {t.plan ? <MiniPlan layout={t.plan} /> : <span className="mini-empty" aria-hidden="true" />}
+              <span>{t.name}<small>{t.metrics ? `${t.metrics.slots} empl. · ${t.metrics.fleet} robots max` : t.error}</small><small className="purpose">{t.purpose}</small></span></button>)}
+          </div></div>
       </div>
       <div className="card">
         <h2>Stockage et flotte</h2>
+        {draft.profile === 'lifts' && <Stepper id="lift-duration" label="Ascenseur · pas par niveau (0,1 s)" value={liftSteps} min={5} max={100} step={5} onChange={setLiftSteps} />}
         <div className="field-grid">
           <Stepper id="edit-levels" label="Niveaux" value={fields.levels} min={1} max={8} onChange={(v) => setFields({ ...fields, levels: v })} />
           <Stepper id="edit-fill" label="Remplissage (%)" value={fields.fill} min={1} max={100} step={5} onChange={(v) => setFields({ ...fields, fill: v })} />

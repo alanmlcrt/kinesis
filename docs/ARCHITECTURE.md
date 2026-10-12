@@ -54,11 +54,12 @@ sur les mêmes fonctions `sim/` que les tests Node).
 
 Modèle de cellules : sol `width × depth`, 4 voisins. Cases paires (x et z pairs) =
 emplacements (baie de stationnement, station, accès de grimpe) ; lignes et colonnes
-impaires = voies. **Travée = 2 cellules** (accès R en x pair, stockage en x + 1) depuis le
-11 octobre 2026, posable sur toute ligne (rangées continues, 12 octobre) ; l’accès est
-traversable au sol en 2025+ (même sous un robot qui grimpe : `onGround` dans `sim.ts`,
-la cellule est libérée en montée et reprise à la descente), terminal en classique ;
-la cellule de stockage est une voie en 2025+ et bloquée en classique. Limite : 512 travées. Profils
+impaires = voies. **Travée = rayonnage | allée de grimpe | rayonnage** (x − 1, x, x + 1 ;
+x pair), un bac par côté et par niveau (`Bin.side`), posable sur toute ligne. L’allée se
+traverse au sol, même sous un robot qui grimpe (`onGround` dans `sim.ts`). Rayonnages :
+voies en 2025+, bloqués en classique (dos à dos jointifs). AutoStore : piles sur toute
+cellule. Modèles par technologie : `TEMPLATES` / `templateLayout` (`layout.ts`). Limite :
+2 500 travées. Profils
 (`layout.profile`) : `skypod` (défaut, `generation` 2025+ ou classic), `lifts`
 (gaines, graphe multi-étages), `autostore` (grille au sommet, piles). Un seul moteur :
 un profil = données + quelques branches explicites dans `layoutFloor`, `floorNeighbors`,
@@ -88,7 +89,11 @@ un profil = données + quelques branches explicites dans `layoutFloor`, `floorNe
   d’invariant), lu par `Lab.tsx` (`metrics`) et, pour les campagnes, par
   `runReplication`/`analyzeFleet`.
 - **Nouvel outil d’édition** : branche dans `editLayout` (validation incluse) puis bouton
-  dans la barre d’outils de `Editor.tsx` ; la peinture et l’annulation suivent seules.
+  dans la barre d’outils de `Editor.tsx` ; peinture, ligne, zone et annulation suivent seules.
+- **Nouveau modèle de plan** : entrée dans `TEMPLATES` et branche dans `templateLayout`
+  (`layout.ts`), test de cycles dans `layout.test.ts` ; la carte apparaît seule.
+- **Contrôles navigateur** : valeurs attendues via `web/check/plans.mjs` (`expected`,
+  `usePlan`, `resetPlan`), calculées par le moteur.
 - **Nouveau profil d’architecture** : valeur de `Layout['profile']`, règles dans
   `validateLayout`/`layoutFloor`/`floorNeighbors`/`sim.ts`, pastille dans `ARCHITECTURES`
   (`Editor.tsx`), géométrie dans `scene/assets.ts`, test de cycles dans `profiles.test.ts`,

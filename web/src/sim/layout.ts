@@ -17,12 +17,13 @@ export function regularLayout(width: number, depth: number, rows: number, bays: 
   levels: number, stationCount: number, fill = 100, storage: Layout['storage'] = 'random', generation?: Layout['generation']): Layout {
   if (![rows, bays, stationCount].every(Number.isInteger) || rows < 1 || rows > 12 || bays < 1 || bays > 60 ||
       stationCount < 1 || stationCount > 12) throw new RangeError('Choisir 1–12 rangées et stations, et 1–60 travées.')
-  const stride = Math.floor((width - 6) / Math.max(1, rows - 1) / 2) * 2
+  // Première allée en x = 4 : le bord gauche reste joignable même si les rayonnages bloquent le sol.
+  const stride = Math.floor((width - 8) / Math.max(1, rows - 1) / 2) * 2
   if (rows > 1 && stride < 4 || bays + 5 > depth) {
     throw new RangeError('Le sol est trop petit pour ces rangées ou travées. Agrandir le sol ou réduire le stockage.')
   }
   const racks = Array.from({ length: rows }, (_, i) =>
-    Array.from({ length: bays }, (_, j) => ({ x: 2 + i * stride, z: 2 + j }))).flat()
+    Array.from({ length: bays }, (_, j) => ({ x: 4 + i * stride, z: 2 + j }))).flat()
   const stationStride = Math.floor((width - 2) / Math.max(1, stationCount - 1) / 2) * 2
   if (stationCount > 1 && stationStride < 2) throw new RangeError('Pas assez de place pour les stations.')
   const layout = { width, depth, levels, fill, storage, racks, ...(generation ? { generation } : {}),
@@ -55,14 +56,18 @@ export function aisleLayout(a: AisleSpec): Layout {
     throw new RangeError('Le sol doit avoir des dimensions paires : largeur 16–80, profondeur 16–64 cellules.')
   }
   const xs: number[] = []
-  for (let x = 2, i = 0; x <= a.width - 4; x += ++i % a.block ? 4 : 3 + a.aisle) xs.push(x)
+  for (let x = 4, i = 0; x <= a.width - 4; x += ++i % a.block ? 4 : 3 + a.aisle) xs.push(x)
   const zs: number[] = []
   const first = a.sides === 2 ? 2 + a.front : 2, last = a.depth - 4 - a.front
-  // Une allée transversale = une position de travée laissée libre.
-  for (let z = first, n = 0; z <= last; z++) if (!a.cross || n++ % (a.cross + 1) < a.cross) zs.push(z)
+  // Une allée transversale = une ligne laissée libre après au moins `cross` travées, sur une ligne
+  // impaire : c'est une voie de circulation continue de la grille.
+  for (let z = first, n = 0; z <= last; z++) {
+    if (a.cross && n >= a.cross && z % 2) { n = 0; continue }
+    zs.push(z); n++
+  }
   const racks = xs.flatMap((x) => zs.map((z) => ({ x, z })))
   if (!racks.length) throw new RangeError('Aucune travée ne tient : agrandir le sol ou réduire les allées.')
-  if (racks.length > 512) throw new RangeError(`${racks.length} travées : 512 au plus. Réduire le sol ou élargir les allées.`)
+  if (racks.length > 2500) throw new RangeError(`${racks.length} travées : 2 500 au plus. Réduire le sol ou élargir les allées.`)
   const place = (count: number, z: number) => {
     const stride = Math.floor((a.width - 2) / Math.max(1, count - 1) / 2) * 2
     if (count > 1 && stride < 2) throw new RangeError('Pas assez de place pour les stations.')
@@ -76,12 +81,48 @@ export function aisleLayout(a: AisleSpec): Layout {
   return layout
 }
 
-// Une travée couvre 2 cases : accès de grimpe et stockage, une cellule chacun.
+// Modèles par technologie, générés à la taille du sol choisie par l'utilisateur.
+export type Architecture = 'skypod' | 'classic' | 'lifts' | 'autostore'
+export const TEMPLATES: { id: string; architecture: Architecture; name: string; purpose: string }[] = [
+  { id: 'skypod-dense', architecture: 'skypod', name: 'Densité maximale', purpose: 'Allées de grimpe toutes les 4 cellules ; les robots passent sous les rayonnages.' },
+  { id: 'skypod-balanced', architecture: 'skypod', name: 'Équilibré', purpose: 'Blocs de 4 allées, transversales régulières : stock et circulation.' },
+  { id: 'skypod-flow', architecture: 'skypod', name: 'Débit prioritaire', purpose: 'Allées par paires, larges couloirs, stations des deux côtés.' },
+  { id: 'classic-back', architecture: 'classic', name: 'Rayonnages dos à dos', purpose: 'Une allée de grimpe par paire de rayonnages ; on circule par les allées.' },
+  { id: 'classic-cross', architecture: 'classic', name: 'Avec transversales', purpose: 'Allées coupées par des transversales, stations des deux côtés.' },
+  { id: 'lifts-balanced', architecture: 'lifts', name: 'Étages et gaines', purpose: 'Blocs d’allées par étage, deux gaines d’ascenseur près des stations.' },
+  { id: 'autostore-grid', architecture: 'autostore', name: 'Grille pleine', purpose: 'Piles sur toute la grille, ports en bordure ; robots au sommet.' },
+  { id: 'autostore-two', architecture: 'autostore', name: 'Ports des deux côtés', purpose: 'Grille pleine, ports répartis sur deux bords pour équilibrer les flux.' },
+]
+export function templateLayout(id: string, width: number, depth: number, levels: number, stations: number): Layout {
+  const base = { width, depth, levels, fill: 100, storage: 'random' as const }
+  const aisles = (spec: Pick<AisleSpec, 'block' | 'aisle' | 'cross' | 'front' | 'sides'>, generation?: Layout['generation']) =>
+    aisleLayout({ ...base, ...spec, stations: Math.max(spec.sides, stations), generation })
+  if (id === 'skypod-dense') return aisles({ block: 12, aisle: 1, cross: 0, front: 2, sides: 1 })
+  if (id === 'skypod-balanced') return aisles({ block: 4, aisle: 3, cross: 10, front: 2, sides: 1 })
+  if (id === 'skypod-flow') return aisles({ block: 2, aisle: 5, cross: 6, front: 4, sides: 2 })
+  if (id === 'classic-back') return aisles({ block: 2, aisle: 3, cross: 0, front: 2, sides: 1 }, 'classic')
+  if (id === 'classic-cross') return aisles({ block: 2, aisle: 3, cross: 8, front: 2, sides: 2 }, 'classic')
+  if (id === 'lifts-balanced') return withProfile(aisles({ block: 4, aisle: 3, cross: 10, front: 2, sides: 1 }), 'lifts')
+  if (id === 'autostore-grid' || id === 'autostore-two') {
+    // Une pile par emplacement pair, sur toute la grille hors bordures et rangée des ports.
+    const sides = id === 'autostore-two' ? 2 : 1, top = sides === 2 ? 4 : 2, racks: Point[] = []
+    for (let x = 2; x <= width - 3; x++) for (let z = top; z <= depth - 4; z++) racks.push({ x, z })
+    if (racks.length > 2500) throw new RangeError(`${racks.length} piles : 2 500 au plus. Réduire le sol.`)
+    const place = (count: number, z: number) => Array.from({ length: count }, (_, i) => ({ x: Math.floor(i * (width - 2) / Math.max(1, count - 1) / 2) * 2, z }))
+    const n = Math.max(sides, stations), first = sides === 2 ? Math.floor(n / 2) : 0
+    const layout: Layout = { ...base, racks, stations: [...place(first, 0), ...place(n - first, depth - 2)], profile: 'autostore' }
+    validateLayout(layout)
+    return layout
+  }
+  throw new RangeError('Modèle inconnu.')
+}
+
+// Une travée couvre 3 cases : rayonnage, allée de grimpe, rayonnage (brevet Exotec US11208264B2).
 // Sol libre : part du sol sans stockage au-dessus (allées, stations, bordures). Hypothèse du modèle.
-export const TRAVEE_CELLS = 2
+export const TRAVEE_CELLS = 3
 export function layoutMetrics(layout: Layout) {
   const area = layout.width * layout.depth
-  return { slots: layout.racks.length * layout.levels, area, freeShare: 1 - (layout.profile === 'autostore' ? 1 : TRAVEE_CELLS) * layout.racks.length / area, fleet: validateLayout(layout) }
+  return { slots: storageSlots(layout), area, freeShare: 1 - (layout.profile === 'autostore' ? 1 : TRAVEE_CELLS) * layout.racks.length / area, fleet: validateLayout(layout) }
 }
 
 export const PRESETS = {
@@ -109,19 +150,23 @@ export function validateLayout(layout: Layout): number {
   if (!Number.isInteger(levels) || levels < 1 || levels > 8) throw new RangeError('Choisir 1 à 8 niveaux.')
   if (!Number.isInteger(fill) || fill < 1 || fill > 100) throw new RangeError('Le remplissage doit être entre 1 et 100 %.')
   if (layout.storage !== 'random' && layout.storage !== 'near-station') throw new RangeError('Mode de rangement inconnu.')
-  if (!Array.isArray(racks) || racks.length < 1 || racks.length > 512) throw new RangeError('Le plan doit contenir 1 à 512 travées de stockage.')
+  if (!Array.isArray(racks) || racks.length < 1 || racks.length > 2500) throw new RangeError('Le plan doit contenir 1 à 2 500 travées de stockage.')
   if (!Array.isArray(stations) || stations.length < 1 || stations.length > 12) throw new RangeError('Le plan doit contenir 1 à 12 stations.')
   const used = new Set<number>()
   for (const [kind, points] of [['rack', racks], ['station', stations]] as const) for (const p of points) {
     // Travées sur toutes les lignes (rangées continues) ; stations aux emplacements pairs.
-    if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.z) || p.x % 2 || kind !== 'rack' && p.z % 2 ||
+    // AutoStore : grille pleine, une pile sur toute cellule.
+    if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.z) || !(kind === 'rack' && layout.profile === 'autostore') && p.x % 2 || kind !== 'rack' && p.z % 2 ||
         p.x < 0 || p.z < 0 || p.x > width - 2 || p.z > depth - 2 ||
-        kind === 'rack' && (p.x < 2 || p.x > width - 4 || p.z < 2 || p.z > depth - 4)) {
+        kind === 'rack' && (p.x < 2 || p.x > width - (layout.profile === 'autostore' ? 3 : 4) || p.z < 2 || p.z > depth - 4)) {
       throw new RangeError('Placement hors du sol ou hors des emplacements pairs autorisés.')
     }
-    const cell = p.z * width + p.x
-    if (used.has(cell)) throw new RangeError('Deux équipements se chevauchent. Libérer leur emplacement avant de les placer.')
-    used.add(cell)
+    // Travée Skypod : rayonnage à gauche (x − 1), allée de grimpe (x), rayonnage à droite (x + 1).
+    const cells = kind === 'rack' && layout.profile !== 'autostore' ? [p.z * width + p.x - 1, p.z * width + p.x, p.z * width + p.x + 1] : [p.z * width + p.x]
+    for (const cell of cells) {
+      if (used.has(cell)) throw new RangeError('Deux équipements se chevauchent. Libérer leur emplacement avant de les placer.')
+      used.add(cell)
+    }
   }
   if (layout.profile === 'lifts') {
     if (!Array.isArray(layout.lifts) || layout.lifts.length < 1 || layout.lifts.length > 8 || !Number.isInteger(layout.liftSteps) || layout.liftSteps! < 5 || layout.liftSteps! > 100 || layout.liftSteps! % 5) {
@@ -142,7 +187,7 @@ export function validateLayout(layout: Layout): number {
     for (const n of floorNeighbors(layout, c)) {
       if (n < 0 || seen.has(n) || floor[n] === 'blocked') continue
       seen.add(n)
-      if (floor[n] === 'lane' || floor[n] === 'lift' || layout.profile === 'autostore' && floor[n] === 'column') queue.push(n)
+      if (floor[n] === 'lane' || floor[n] === 'lift' || floor[n] === 'column' && layout.profile !== 'lifts') queue.push(n)
     }
   }
   for (let c = 0; c < floor.length; c++) if (floor[c] !== 'lane' && floor[c] !== 'blocked' && !seen.has(c)) {
@@ -185,9 +230,13 @@ export function layoutFloor(layout: Layout): Floor[] {
   const floor: Floor[] = Array.from({ length: width * depth }, (_, c) =>
     c % width % 2 === 0 && Math.floor(c / width) % 2 === 0 ? 'parking' : 'lane')
   for (const { x, z } of layout.racks) {
-    // Travée : accès de grimpe (x) et stockage (x + 1), une cellule chacun ; bloqués au sol en génération classique.
-    if (layout.generation === 'classic') floor[z * width + x + 1] = 'blocked'
+    // Travée : allée de grimpe (x) entre deux rayonnages (x ± 1) ; rayonnages bloqués au sol en classique.
+    if (layout.generation === 'classic') floor[z * width + x - 1] = floor[z * width + x + 1] = 'blocked'
     floor[z * width + x] = 'column'
+  }
+  // Classique : deux rayonnages dos à dos (x + 1 et x + 3) sont jointifs ; la cellule entre eux est pleine.
+  if (layout.generation === 'classic') for (const { x, z } of layout.racks) {
+    if (x + 4 < width && layout.racks.some((p) => p.x === x + 4 && p.z === z)) floor[z * width + x + 2] = 'blocked'
   }
   for (const { x, z } of layout.stations) floor[z * width + x] = 'station'
   if (layout.profile === 'lifts') {
@@ -201,7 +250,7 @@ export function layoutFloor(layout: Layout): Floor[] {
 export function editLayout(layout: Layout, tool: 'rack' | 'station' | 'lift' | 'erase', x: number, z: number): Layout {
   validateLayout(layout)
   if (!['rack', 'station', 'lift', 'erase'].includes(tool)) throw new RangeError('Outil de placement inconnu.')
-  if (!Number.isInteger(x) || !Number.isInteger(z) || x % 2 || (tool === 'station' || tool === 'lift') && z % 2 || x < 0 || z < 0 || x >= layout.width || z >= layout.depth) {
+  if (!Number.isInteger(x) || !Number.isInteger(z) || x % 2 && !(layout.profile === 'autostore' && tool !== 'station') || (tool === 'station' || tool === 'lift') && z % 2 || x < 0 || z < 0 || x >= layout.width || z >= layout.depth) {
     throw new RangeError('Choisir des coordonnées paires à l’intérieur du sol (une travée peut aussi occuper une ligne impaire).')
   }
   const next: Layout = { ...layout, racks: layout.racks.map((p) => ({ ...p })), stations: layout.stations.map((p) => ({ ...p })), ...(layout.lifts ? { lifts: layout.lifts.map((p) => ({ ...p })) } : {}) }
@@ -261,5 +310,6 @@ export function parseLayout(value: unknown): Layout {
 }
 
 // Bases de normalisation : emplacements de stockage (travées × niveaux) et emprise au sol (cases).
-export const storageSlots = (layout: Layout) => layout.racks.length * layout.levels
+// Deux bacs par niveau et par travée Skypod/ascenseurs (un de chaque côté), un par pile AutoStore.
+export const storageSlots = (layout: Layout) => layout.racks.length * layout.levels * (layout.profile === 'autostore' ? 1 : 2)
 export const footprint = (layout: Layout) => layout.width * layout.depth

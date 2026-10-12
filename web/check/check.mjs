@@ -13,6 +13,8 @@ import { checkControl } from './control.mjs'
 import { checkProfiles } from './profiles.mjs'
 import { checkRhcr } from './rhcr.mjs'
 import { checkLab } from './lab.mjs'
+import { expected, resetPlan, usePlan } from './plans.mjs'
+import { PRESETS, storageSlots } from '../src/sim/layout.ts'
 
 const SECONDS = 5
 
@@ -234,7 +236,7 @@ try {
   })
   assert.ok(transfer && transfer.level > 0 && transfer.robotY > 0.2 && transfer.binY > transfer.robotY)
   assert.equal(transfer.columns, 64)
-  assert.equal(transfer.bins, 256)
+  assert.equal(transfer.bins, 512, 'deux bacs par niveau et par travée')
   await page.evaluate((robotId) => {
     const { sim } = window.kinesis, r = sim.robots[robotId]
     const { camera, controls } = window.kinesisView.get()
@@ -282,9 +284,11 @@ try {
   assert.ok(completed > 0)
   console.log('Cycle 3D vérifié : montée, transfert latéral figé en pause, station et remise en stock')
   const layouts = []
-  for (const [preset, columns, levels, stations] of [['dense', 192, 4, 4], ['large', 300, 6, 6]]) {
+  for (const [preset, width, depth, levels] of [['skypod-dense', 48, 32, 4], ['skypod-balanced', 64, 40, 6]]) {
+    const { columns } = expected(preset, width, depth, levels), stations = 4
     await page.getByRole('button', { name: 'Construire', exact: true }).click()
-    await page.locator(`[data-preset=\"${preset}\"]`).click()
+    await page.getByLabel('Niveaux', { exact: true }).fill(String(levels))
+    await usePlan(page, preset, width, depth)
     await page.getByRole('button', { name: 'Appliquer le plan →' }).click()
     await page.waitForFunction(({ columns, levels }) => window.kinesis.sim.columns.length === columns && window.kinesis.sim.levels === levels, { columns, levels })
     assert.equal(await page.evaluate(() => window.kinesis.sim.stations.length), stations)
@@ -301,14 +305,14 @@ try {
     await page.getByRole('button', { name: '10×', exact: true }).click()
   }
   // Brouillon, erreur récupérable, génération et placement clavier puis application réelle.
+  await resetPlan(page)
   await page.getByRole('button', { name: 'Construire', exact: true }).click()
-  await page.locator(`[data-preset=\"${'demo'}\"]`).click()
   // Dimensions modifiées directement sur la matrice : le brouillon change, pas le run.
   await page.getByLabel('Largeur (cellules)').fill('50')
   await page.locator('svg.plan[aria-label^="Plan 50 par 32"]').waitFor()
   await page.getByRole('button', { name: 'Largeur : plus' }).click()
   await page.locator('svg.plan[aria-label^="Plan 52 par 32"]').waitFor()
-  assert.equal(await page.evaluate(() => window.kinesis.sim.columns.length), 300)
+  assert.equal(await page.evaluate(() => window.kinesis.sim.columns.length), 64)
   // Poignée tirée à la souris, puis peinture d'une rangée annulée en un seul geste (régression : historique figé au début du geste).
   const handle = await page.locator('[data-handle=x]').boundingBox()
   await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down()
@@ -321,13 +325,13 @@ try {
   assert.equal(await page.locator('.plan-rack').count(), racksBefore + 19, 'rangée continue peinte incomplète (lignes 2 à 20)')
   await page.getByRole('button', { name: 'Annuler la modification', exact: true }).click()
   assert.equal(await page.locator('.plan-rack').count(), racksBefore, 'un geste de peinture doit s’annuler en une fois')
-  await page.locator(`[data-preset=\"${'demo'}\"]`).click() // recharger le même preset doit fonctionner
+  await page.locator('[data-preset="skypod-balanced"]').click() // un modèle s'applique sur le sol courant
   await page.getByLabel('Largeur (cellules)').fill('16')
   await page.locator('.regular-settings summary').click()
   await page.getByLabel('Rangées', { exact: true }).fill('12')
   await page.getByRole('button', { name: 'Générer le plan' }).click()
   await page.getByRole('alert').filter({ hasText: 'trop petit' }).waitFor()
-  assert.equal(await page.evaluate(() => window.kinesis.sim.columns.length), 300, 'un brouillon a modifié le run')
+  assert.equal(await page.evaluate(() => window.kinesis.sim.columns.length), 64, 'un brouillon a modifié le run')
   await page.getByLabel('Largeur (cellules)').fill('32')
   await page.getByLabel('Profondeur (cellules)').fill('24')
   await page.getByLabel('Rangées', { exact: true }).fill('3')
@@ -341,7 +345,8 @@ try {
   await page.getByRole('button', { name: 'Gomme', exact: true }).click()
   const plan = page.locator('svg.plan')
   await plan.focus()
-  await page.keyboard.press('Enter') // enlève la travée (2, 2)
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('Enter') // enlève la travée (4, 2) : première allée en x = 4
   await page.getByRole('button', { name: 'Station', exact: true }).click()
   await plan.focus()
   await page.keyboard.press('Enter') // station au même emplacement libéré
@@ -363,14 +368,14 @@ try {
   await assertRenderedPlan()
   assert.equal(await page.evaluate(() => window.kinesis.sim.columns.length), 15)
   assert.equal(await page.evaluate(() => window.kinesis.sim.stations.length), 3)
-  assert.equal(await page.evaluate(() => window.kinesis.sim.bins.length), 22)
+  assert.equal(await page.evaluate(() => window.kinesis.sim.bins.length), 45)
   assert.equal(await page.evaluate(() => window.kinesis.sim.tick), 0)
   assert.equal(await page.getByLabel('Robots', { exact: true }).inputValue(), '17')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.reload()
   await page.waitForFunction(() => window.kinesis?.mesh.count === 17)
   assert.equal(await page.evaluate(() => window.kinesis.sim.width), 32)
-  assert.equal(await page.evaluate(() => window.kinesis.sim.bins.length), 22)
+  assert.equal(await page.evaluate(() => window.kinesis.sim.bins.length), 45)
   assert.equal(await page.evaluate(() => window.kinesis.sim.tick), 0)
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.getByRole('button', { name: '10×', exact: true }).click()
@@ -390,11 +395,7 @@ try {
   await page.screenshot({ path: fileURLToPath(new URL('./editor-mobile-plan.png', import.meta.url)) })
   await page.locator('#tab-simulation').click()
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.getByRole('button', { name: 'Construire', exact: true }).click()
-  await page.locator(`[data-preset=\"${'demo'}\"]`).click()
-  await page.getByLabel('Robots', { exact: true }).last().fill('20')
-  await page.getByRole('button', { name: 'Appliquer le plan →' }).click()
-  await page.waitForFunction(() => window.kinesis.mesh.count === 20)
+  await resetPlan(page)
   console.log('Éditeur vérifié : presets, génération, placement/effacement clavier, erreurs, brouillon isolé, niveaux, rangement, flotte personnalisée et cycle complet')
   await page.locator('.panel summary').focus()
   await page.keyboard.press('Enter')
@@ -480,9 +481,9 @@ try {
   await page.keyboard.press('Enter')
   const resourceCounts = []
   const textureCounts = []
-  for (const preset of ['dense', 'large', 'demo', 'large', 'demo']) {
+  for (const preset of ['skypod-dense', 'skypod-flow', 'skypod-balanced', 'skypod-flow', 'skypod-balanced']) {
     await page.getByRole('button', { name: 'Construire', exact: true }).click()
-    await page.locator(`[data-preset=\"${preset}\"]`).click()
+    await page.locator(`[data-preset="${preset}"]`).click()
     await page.getByLabel('Robots', { exact: true }).last().fill('20')
     await page.getByRole('button', { name: 'Appliquer le plan →' }).click()
     await page.waitForTimeout(100)
@@ -499,8 +500,9 @@ try {
   assert.equal(resourceCounts[2], resourceCounts[4], 'géométries accumulées sur retour au plan initial')
   assert.equal(textureCounts[1], textureCounts[3], 'textures accumulées à chaque modification')
   assert.equal(textureCounts[2], textureCounts[4], 'textures accumulées sur retour au plan initial')
+  await resetPlan(page)
   await page.getByRole('button', { name: 'Construire', exact: true }).click()
-  await page.locator(`[data-preset=\"${'dense'}\"]`).click()
+  await page.locator('[data-preset="skypod-dense"]').click()
   const saved = await page.evaluate(() => localStorage.getItem('kinesis.configuration.v1'))
   await page.getByLabel('Robots', { exact: true }).last().fill('301')
   await page.getByRole('button', { name: 'Appliquer le plan →' }).click()
@@ -530,9 +532,9 @@ try {
     }
     else {
       await probe.getByRole('button', { name: 'Construire', exact: true }).click()
-      await probe.locator(`[data-preset=\"${'dense'}\"]`).click()
+      await probe.locator('[data-preset="skypod-dense"]').click()
       await probe.getByRole('button', { name: 'Appliquer le plan →' }).click()
-      await probe.waitForFunction(() => window.kinesis.sim.columns.length === 192)
+      await probe.waitForFunction((n) => window.kinesis.sim.columns.length === n, expected('skypod-dense').columns)
       await probe.getByRole('alert').filter({ hasText: 'sauvegarde locale a échoué' }).waitFor()
     }
     await probe.close()
@@ -605,7 +607,7 @@ try {
   await dialog.getByRole('alert').filter({ hasText: 'Choisir une base de normalisation' }).waitFor()
   await dialog.getByRole('radio', { name: 'Capacité de stockage égale' }).check()
   await dialog.getByRole('button', { name: 'Lancer la campagne' }).click()
-  await dialog.getByRole('alert').filter({ hasText: 'Plan appliqué 256, Compact · 8 rangées 768' }).waitFor()
+  await dialog.getByRole('alert').filter({ hasText: `Plan appliqué 512, Compact · 8 rangées ${storageSlots(PRESETS.dense)}` }).waitFor()
   await planBox('Étendu · 10 rangées').check()
   assert.ok(await planBox('Ma démo').isDisabled(), 'quatrième configuration sélectionnable')
   await dialog.getByRole('radio', { name: 'Emprise au sol égale' }).check()
@@ -623,7 +625,7 @@ try {
   const compared = JSON.parse(await readFile(await compareDownload.path(), 'utf8'))
   const mc = compared.manifeste
   assert.deepEqual(mc.configurations.map((c) => [c.nom, c.emplacements, c.empriseCases]),
-    [['Plan appliqué', 256, 1536], ['Compact · 8 rangées', 768, 1536], ['Étendu · 10 rangées', 1800, 2560]])
+    [['Plan appliqué', 512, 1536], ['Compact · 8 rangées', storageSlots(PRESETS.dense), 1536], ['Étendu · 10 rangées', storageSlots(PRESETS.large), 2560]])
   assert.equal(compared.replications.length, 3 * 2 * 2)
   const recomputed = [0, 1, 2].flatMap((c) => [20, 60].map((n) => analyzeFleet(compared.replications.filter((r) => r.configuration === c && r.fleet === n))))
   assert.deepEqual(compared.resultats, recomputed, 'comparaison non recalculable')
@@ -646,8 +648,9 @@ try {
   // Plans nommés : mesures du plan, enregistrement, doublon refusé, comparaison à emprise égale.
   await page.getByRole('button', { name: 'Construire', exact: true }).click()
   const editor = page.locator('section[aria-labelledby="editor-title"]')
-  await editor.locator('[data-preset="dense"]').click()
-  await editor.locator('.plan-metrics').filter({ hasText: '768 emplacements · sol libre 75 % · 284 robots au plus' }).waitFor()
+  const dense = expected('skypod-dense'), airy = expected('skypod-flow')
+  await editor.locator('[data-preset="skypod-dense"]').click()
+  await editor.locator('.plan-metrics').filter({ hasText: `${dense.slots} emplacements · sol libre ${Math.round(dense.freeShare * 100)} % · ${dense.fleet} robots au plus` }).waitFor()
   await page.screenshot({ path: fileURLToPath(new URL('./editor-aisles.png', import.meta.url)) })
   await editor.locator('[name="plan-save-name"]').fill('Dense')
   await editor.getByRole('button', { name: 'Enregistrer pour comparer' }).click()
@@ -655,15 +658,15 @@ try {
   await editor.locator('[name="plan-save-name"]').fill('Dense')
   await editor.getByRole('button', { name: 'Enregistrer pour comparer' }).click()
   await editor.getByRole('alert').filter({ hasText: 'différent des plans enregistrés' }).waitFor()
-  await editor.locator('[data-preset="demo"]').click()
-  await editor.locator('.plan-metrics').filter({ hasText: '256 emplacements' }).waitFor()
+  await editor.locator('[data-preset="skypod-flow"]').click()
+  await editor.locator('.plan-metrics').filter({ hasText: `${airy.slots} emplacements` }).waitFor()
   await editor.locator('[name="plan-save-name"]').fill('Aéré')
   await editor.getByRole('button', { name: 'Enregistrer pour comparer' }).click()
   await editor.getByRole('status').filter({ hasText: 'Aéré' }).waitFor()
-  await editor.locator('[data-preset="dense"]').click()
+  await editor.locator('[data-preset="skypod-dense"]').click()
   await editor.getByLabel('Robots', { exact: true }).last().fill('72')
   await editor.getByRole('button', { name: 'Appliquer le plan →' }).click()
-  await page.waitForFunction(() => window.kinesis.sim.columns.length === 192 && window.kinesis.mesh.count === 72)
+  await page.waitForFunction((n) => window.kinesis.sim.columns.length === n && window.kinesis.mesh.count === 72, dense.columns)
   await assertRenderedPlan()
   const densePaused = await page.getByRole('button', { name: 'Lecture', exact: true }).count() === 1
   if (densePaused) await page.getByRole('button', { name: 'Lecture', exact: true }).click()
@@ -680,17 +683,13 @@ try {
   await campaignRows.nth(3).waitFor({ timeout: 60000 })
   const [aisleDownload] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('button', { name: /Exporter/ }).click()])
   const aisleExport = JSON.parse(await readFile(await aisleDownload.path(), 'utf8'))
-  assert.deepEqual(aisleExport.manifeste.configurations.map((c) => [c.nom, c.emplacements, c.empriseCases]), [['Dense', 768, 1536], ['Aéré', 256, 1536]])
+  assert.deepEqual(aisleExport.manifeste.configurations.map((c) => [c.nom, c.emplacements, c.empriseCases]), [['Dense', dense.slots, 1536], ['Aéré', airy.slots, 1536]])
   assert.deepEqual(aisleExport.resultats, [0, 1].flatMap((c) => [20, 60].map((n) => analyzeFleet(aisleExport.replications.filter((r) => r.configuration === c && r.fleet === n)))))
   for (const name of ['Dense', 'Aéré']) await dialog.getByRole('button', { name: `Supprimer ${name}` }).click()
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Construire', exact: true }).click()
-  await page.locator(`[data-preset=\"${'demo'}\"]`).click()
-  await page.getByLabel('Robots', { exact: true }).last().fill('20')
-  await page.getByRole('button', { name: 'Appliquer le plan →' }).click()
-  await page.waitForFunction(() => window.kinesis.mesh.count === 20 && window.kinesis.sim.columns.length === 64)
-  console.log(`plan dense : 192 travées, 72 robots, ${denseStats.fps.toFixed(1)} images/s, p95 ${denseStats.p95.toFixed(1)} ms, max ${denseStats.max.toFixed(1)} ms`)
-  console.log('Plans nommés vérifiés : mesures 768 empl./75 % libre/284 robots, enregistrement, doublon refusé, plan dense appliqué, comparaison Dense/Aéré recalculée')
+  await resetPlan(page)
+  console.log(`plan dense : ${dense.columns} travées, 72 robots, ${denseStats.fps.toFixed(1)} images/s, p95 ${denseStats.p95.toFixed(1)} ms, max ${denseStats.max.toFixed(1)} ms`)
+  console.log('Plans nommés vérifiés : mesures du modèle « Densité maximale » conformes au moteur, enregistrement, doublon refusé, plan dense appliqué, comparaison Dense/Aéré recalculée')
   const classic = await checkClassic({ page, measure, assertRenderedPlan })
   const exploration = await checkExploration({ page, measure })
   const control = await checkControl({ page, measure })

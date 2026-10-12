@@ -11,10 +11,14 @@ en pause à t = 0 : le lancement reste explicite (bouton Lecture).
 
 - Une case = une cellule du moteur. Les emplacements (coordonnées paires) sont blancs,
   les voies de circulation (lignes/colonnes impaires) grisées.
-- **Travée = 2 cellules** : accès de grimpe **R** puis stockage à droite, une cellule
-  chacun (modèle changé le 11 octobre ; plus de cellule de montant). AutoStore : une
-  pile = une cellule. **Rangées continues** (12 octobre) : une travée peut occuper
-  chaque ligne ; stations et gaines restent sur les emplacements pairs.
+- **Travée = rayonnage | allée de grimpe R | rayonnage** (12 octobre, brevet Exotec,
+  voir `docs/SKYPOD.md`) : un bac de chaque côté par niveau ; deux allées voisines à
+  4 cellules au moins. Rangées continues sur toutes les lignes. AutoStore : une pile =
+  une cellule, grille pleine possible. Stations et gaines sur les emplacements pairs.
+- **Tracé** : *Point* (clic ou glisser-peindre), *Ligne* (glisser : horizontale ou
+  verticale selon le geste ; travées au pas de 4 en largeur, de 1 en profondeur) et
+  *Zone* (rectangle rempli). Les positions impossibles sont ignorées et comptées ;
+  un seul pas d'annulation par geste.
 - Outils **Travée**, **Station**, (**Ascenseur**), **Gomme** : cliquer, ou **glisser
   pour peindre** (un seul pas d’annulation par geste). Un fantôme indique la pose :
   plein si elle est valide, pointillé rouge sinon.
@@ -29,9 +33,14 @@ en pause à t = 0 : le lancement reste explicite (bouton Lecture).
 
 ## Les cartes
 
-- **Plans prêts** (en-tête) : Démonstration, Compact, Étendu, avec miniature.
-- **Architecture** : Skypod 2025+, Skypod classique, Ascenseurs, AutoStore (pastilles
-  radio, flèches au clavier) ; durée d’ascenseur par niveau pour Ascenseurs.
+- **1 · Technologie** : Skypod 2025+, Skypod classique, Ascenseurs, AutoStore, avec
+  l'essentiel à savoir pour la configurer.
+- **2 · Partir d'un modèle** : modèles propres à la technologie, générés sur le sol
+  actuel (la taille reste au choix de l'utilisateur), avec miniature, emplacements et
+  robots possibles ; un modèle trop grand pour le sol est grisé avec la raison.
+  Skypod : densité maximale, équilibré, débit prioritaire ; classique : dos à dos,
+  avec transversales ; ascenseurs : étages et gaines ; AutoStore : grille pleine,
+  ports des deux côtés. Sur téléphone, ces deux étapes passent avant la matrice.
 - **Stockage et flotte** : niveaux, remplissage, rangement initial, robots (compteurs
   −/+) ; jauge robots / baies de stationnement.
 - **Bilan du plan** : emplacements, sol libre, travées, stations (calculés par
@@ -60,9 +69,12 @@ est refusé, le plan fonctionne dans la page et un avertissement signale l'éche
 
 | Configuration | Sol (cellules) | Rangées × travées | Niveaux | Emplacements de bacs | Stations |
 |---|---|---|---|---|---|
-| Démonstration | 48 × 32 | 4 × 16 | 4 | 256 | 4 |
-| Compact | 48 × 32 | 8 × 24 | 4 | 768 | 4 |
-| Étendu | 64 × 40 | 10 × 30 | 6 | 1 800 | 6 |
+| Démonstration (plan de départ) | 48 × 32 | 4 × 16 | 4 | 512 | 4 |
+| Compact (comparaisons) | 48 × 32 | 8 × 24 | 4 | 1 536 | 4 |
+| Étendu (comparaisons) | 64 × 40 | 10 × 30 | 6 | 3 600 | 6 |
+
+Compact et Étendu ne sont plus proposés dans Concevoir (remplacés par les modèles) ;
+ils restent des plans de référence dans Analyser.
 
 Rangées continues depuis le 12 octobre 2026 (une travée par ligne).
 
@@ -72,7 +84,7 @@ Ces configurations restent illustratives, sans certification d'implantation Exot
 ## Contraintes du modèle
 
 - Sol pair, largeur 16–80 cellules, profondeur 16–64 ; 1–8 niveaux.
-- 1–512 travées et 1–12 stations ; flotte de 1–300 robots, limitée par les baies libres
+- 1–2 500 travées et 1–12 stations ; flotte de 1–300 robots, limitée par les baies libres
   (Compact : 284 baies).
 - Travées sur toute ligne (rangées continues), colonne paire ; stations et gaines sur
   les emplacements pairs. Chevauchements, bordures incompatibles

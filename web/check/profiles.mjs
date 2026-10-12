@@ -5,6 +5,7 @@ import { Matrix4, Vector3 } from 'three'
 import { binPosition, robotPosition, step } from '../src/sim/sim.ts'
 import { GEOMETRY } from '../src/sim/geometry.ts'
 import { runReplication } from '../src/sim/campaign.ts'
+import { resetPlan } from './plans.mjs'
 
 export async function checkProfiles({ page, measure }) {
   const paused = await page.getByRole('button', { name: 'Lecture', exact: true }).count() === 1
@@ -15,7 +16,6 @@ export async function checkProfiles({ page, measure }) {
   const shot = (name) => page.screenshot({ path: fileURLToPath(new URL(`./${name}.png`, import.meta.url)) })
   for (const profile of ['skypod', 'lifts', 'autostore']) {
     await open()
-    await editor.locator(`[data-preset=\"${'demo'}\"]`).click()
     await editor.locator(`[name=\"architecture\"][value=\"${profile}\"]`).check()
     await editor.locator('.regular-settings summary').click()
     for (const [name, value] of Object.entries({ width: '16', depth: '16', rows: '2', bays: '3', stations: '2', levels: '3', robots: '4' })) await editor.locator(`[name="${name}"]`).fill(value)
@@ -75,8 +75,8 @@ export async function checkProfiles({ page, measure }) {
       // Le bac doit pouvoir traverser l'ouverture : aucun rail ne coupe son puits vertical.
       for (const c of sim.columns) for (let i = 0; i < snapshot.structures; i++) {
         const a = snapshot.structureMatrices, o = i * 16
-        const dx = Math.abs(a[o + 12] - (c.stockX - sim.width / 2 + .5))
-        const dz = Math.abs(a[o + 14] - (c.stockZ - sim.depth / 2 + .5))
+        const dx = Math.abs(a[o + 12] - (c.cell % sim.width - sim.width / 2 + .5))
+        const dz = Math.abs(a[o + 14] - (Math.floor(c.cell / sim.width) - sim.depth / 2 + .5))
         assert.ok(dx >= GEOMETRY.binHalfWidth + a[o] / 2 || dz >= GEOMETRY.binHalfDepth + a[o + 10] / 2, 'Grille intersectant le puits du bac')
       }
     }
@@ -105,7 +105,11 @@ export async function checkProfiles({ page, measure }) {
   for (const [name, value] of Object.entries({ fleets: '2', replications: '2', seconds: '800', seed: '3' })) await dialog.locator(`[name="${name}"]`).fill(value)
   await dialog.getByRole('button', { name: 'Lancer la campagne', exact: true }).click()
   await dialog.getByRole('alert').filter({ hasText: 'Choisir une base' }).waitFor()
+  // AutoStore : un bac par pile et par niveau, Skypod/ascenseurs : deux par travée ; capacités différentes à plan égal.
   await dialog.getByRole('radio', { name: 'Capacité de stockage égale', exact: true }).check()
+  await dialog.getByRole('button', { name: 'Lancer la campagne', exact: true }).click()
+  await dialog.getByRole('alert').filter({ hasText: 'Capacités différentes' }).waitFor()
+  await dialog.getByRole('radio', { name: 'Emprise au sol égale', exact: true }).check()
   await dialog.getByRole('button', { name: 'Lancer la campagne', exact: true }).click()
   await dialog.getByRole('button', { name: /Exporter/ }).waitFor({ timeout: 60000 })
   const [download] = await Promise.all([page.waitForEvent('download'), dialog.getByRole('button', { name: /Exporter/ }).click()])
@@ -117,8 +121,7 @@ export async function checkProfiles({ page, measure }) {
   await page.setViewportSize({ width: 1280, height: 800 })
   for (const profile of ['skypod', 'lifts', 'autostore']) await dialog.getByRole('button', { name: `Supprimer Profil ${profile}`, exact: true }).click()
   await page.keyboard.press('Escape')
-  await open(); await editor.locator(`[data-preset=\"${'demo'}\"]`).click()
-  await editor.locator('[name="robots"]').fill('20'); await apply()
+  await resetPlan(page)
   await page.waitForFunction(() => window.kinesis?.mesh.count === 20)
   await page.getByRole('button', { name: '1×', exact: true }).click()
   if (paused && await page.getByRole('button', { name: 'Pause', exact: true }).count()) await page.getByRole('button', { name: 'Pause', exact: true }).click()

@@ -102,22 +102,26 @@ export const binParts = (() => {
 export function rackParts(height: number, levels: number, spacing: number) {
   const uprights: BufferGeometry[] = [], shelves: BufferGeometry[] = [], fittings: BufferGeometry[] = []
   // Profils pliés en C, pieds ancrés et dents des rails : pas de piliers pleins.
-  // Montants : guides de la colonne d'accès, puis bord extérieur de la cellule de stockage.
-  for (const x of [-GEOMETRY.guideOffset, GEOMETRY.guideOffset, GEOMETRY.stockOffsetX + GEOMETRY.guideOffset]) for (const z of [-GEOMETRY.guideOffset, GEOMETRY.guideOffset]) {
+  // Montants : guides de l'allée de grimpe, puis bords extérieurs des deux rayonnages face à face.
+  const outer = GEOMETRY.stockOffsetX + GEOMETRY.guideOffset
+  for (const x of [-outer, -GEOMETRY.guideOffset, GEOMETRY.guideOffset, outer]) for (const z of [-GEOMETRY.guideOffset, GEOMETRY.guideOffset]) {
     uprights.push(box(.075, height, .024, x, height / 2, z))
     for (const dx of [-.032, .032]) uprights.push(box(.012, height, .07, x + dx, height / 2, z + .028))
     fittings.push(box(.18, .035, .17, x, .02, z, .008))
     for (const dz of [-.055, .055]) fittings.push(cylinder(.014, .015, x, .045, z + dz))
-    if (x < 1) for (let y = .22; y < height; y += .14) fittings.push(box(.055, .025, .025, x, y, z - .026))
+    if (Math.abs(x) < 1) for (let y = .22; y < height; y += .14) fittings.push(box(.055, .025, .025, x, y, z - .026))
   }
   for (let level = 1; level <= levels; level++) {
     const y = level * spacing + GEOMETRY.shelfOffsetY
-    shelves.push(box(.86, .045, .9, 1, y, 0))
-    for (const z of [-.43, .43]) shelves.push(box(.86, .12, .035, 1, y - .05, z))
-    for (const z of [-.25, .25]) fittings.push(box(.82, .025, .045, 1, y + .035, z))
-    for (const z of [-.47, .47]) uprights.push(box(1.94, .09, .06, .5, y - .11, z))
+    for (const side of [-1, 1]) {
+      const cx = side * GEOMETRY.stockOffsetX
+      shelves.push(box(.86, .045, .9, cx, y, 0))
+      for (const z of [-.43, .43]) shelves.push(box(.86, .12, .035, cx, y - .05, z))
+      for (const z of [-.25, .25]) fittings.push(box(.82, .025, .045, cx, y + .035, z))
+    }
+    for (const z of [-.47, .47]) uprights.push(box(2 * outer, .09, .06, 0, y - .11, z))
   }
-  for (const z of [-.47, .47]) uprights.push(box(2, .10, .07, .5, height, z))
+  for (const z of [-.47, .47]) uprights.push(box(2 * outer + .06, .10, .07, 0, height, z))
   return [part(merge(uprights), PALETTE.rack, .42, .65), part(merge(shelves), PALETTE.rack, .57, .5),
     part(merge(fittings), PALETTE.steel, .35, .78)]
 }

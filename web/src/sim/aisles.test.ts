@@ -7,9 +7,9 @@ const base: AisleSpec = { width: 48, depth: 32, levels: 4, block: 2, aisle: 3, c
 
 test('implantation par allées : géométrie des rangées, allées transversales, stations', () => {
   const dense = aisleLayout({ ...base, block: 12, aisle: 1, front: 0 })
-  assert.deepEqual([...new Set(dense.racks.map((r) => r.x))], [2, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42])
+  assert.deepEqual([...new Set(dense.racks.map((r) => r.x))], [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44])
   // Blocs de 2 rangées : pas de 4 dans le bloc, 3 + allée entre blocs.
-  assert.deepEqual([...new Set(aisleLayout(base).racks.map((r) => r.x))], [2, 6, 12, 16, 22, 26, 32, 36, 42])
+  assert.deepEqual([...new Set(aisleLayout(base).racks.map((r) => r.x))], [4, 8, 14, 18, 24, 28, 34, 38, 44])
   const crossed = aisleLayout({ ...base, cross: 3 })
   const zs = [...new Set(crossed.racks.map((r) => r.z))]
   assert.deepEqual(zs.slice(0, 6), [2, 3, 4, 6, 7, 8], 'une position libre toutes les 3 travées')
@@ -22,9 +22,9 @@ test('implantation par allées : géométrie des rangées, allées transversales
 test('mesures : emplacements, sol libre, flotte possible', () => {
   const l = aisleLayout({ ...base, block: 12, aisle: 1, front: 0 }), m = layoutMetrics(l)
   assert.equal(l.racks.length, 11 * 27, 'rangées continues')
-  assert.equal(m.slots, 11 * 27 * 4)
+  assert.equal(m.slots, 11 * 27 * 4 * 2, 'deux bacs par niveau et par travée')
   assert.equal(m.area, 48 * 32)
-  assert.equal(m.freeShare, 1 - 2 * 297 / 1536)
+  assert.equal(m.freeShare, 1 - 3 * 297 / 1536)
   // Plus d'allées : moins d'emplacements, plus de sol libre.
   const sparse = layoutMetrics(aisleLayout({ ...base, block: 1, aisle: 9 }))
   assert.ok(sparse.slots < m.slots && sparse.freeShare > m.freeShare && sparse.fleet > m.fleet)
@@ -32,7 +32,7 @@ test('mesures : emplacements, sol libre, flotte possible', () => {
 
 test('réglages refusés', () => {
   for (const bad of [{ block: 0 }, { block: 13 }, { aisle: 2 }, { aisle: 11 }, { cross: -1 }, { cross: 25 }, { front: 3 }, { front: 10 },
-    { sides: 3 }, { stations: 0 }, { sides: 2, stations: 1 }, { stations: 13 }, { width: 47 }, { width: 80, depth: 64, block: 12, aisle: 1, front: 0 }]) {
+    { sides: 3 }, { stations: 0 }, { sides: 2, stations: 1 }, { stations: 13 }, { width: 47 }]) {
     assert.throws(() => aisleLayout({ ...base, ...bad } as AisleSpec), RangeError, JSON.stringify(bad))
   }
 })
