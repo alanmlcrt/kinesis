@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { binPosition, createSim, DT, LEVEL_HEIGHT, robotPosition, step, type State } from './sim.ts'
+import { binPosition, createSim, DT, LEVEL_HEIGHT, robotPosition, step, type State, onGround } from './sim.ts'
 
 function run(seed: number, count: number, ticks: number): State {
   const s = createSim(seed, count)
@@ -29,9 +29,11 @@ for (const count of [20, 100, 300]) test(`${count} robots : aucun conflit au sol
         const c = r.z * s.width + r.x
         assert.ok(c >= 0 && c < s.floor.length)
         assert.notEqual(s.floor[c], 'blocked')
-        assert.ok(!cells.has(c), 'collision au sol ou à la base de colonne')
-        cells.add(c)
-        assert.equal(s.occupied[c], r.id)
+        if (onGround(s, r)) {
+          assert.ok(!cells.has(c), 'collision au sol ou à la base de colonne')
+          cells.add(c)
+          assert.equal(s.occupied[c], r.id)
+        }
         robotPosition(s, r, out)
         assert.ok(Math.hypot(out.x - previous[r.id].x, out.y - previous[r.id].y, out.z - previous[r.id].z) <= 2 * DT + 1e-9, 'saut de position')
         Object.assign(previous[r.id], out)
@@ -49,7 +51,7 @@ for (const count of [20, 100, 300]) test(`${count} robots : aucun conflit au sol
           assert.ok(!expected.has(next), 'réservation double')
           assert.equal(s.occupied[next], -1, 'destination occupée')
           assert.notEqual(s.floor[next], 'blocked')
-          if (i < r.pathLength - 1) assert.equal(s.floor[next], 'lane', 'traversée d’une baie')
+          if (i < r.pathLength - 1) assert.ok(s.floor[next] === 'lane' || s.floor[next] === 'column', 'traversée d’une baie')
           expected.set(next, r.id)
         }
       }
@@ -108,8 +110,8 @@ test('prise et dépôt au bon niveau, conservation des bacs et passage sous rack
   }
   assert.ok(takes > 0 && puts > 0)
   assert.ok(underRack, 'aucun passage sous rack')
-  assert.equal(s.bins.length, 128)
-  assert.equal(new Set(s.bins.map((b) => b.id)).size, 128)
+  assert.equal(s.bins.length, 256)
+  assert.equal(new Set(s.bins.map((b) => b.id)).size, 256)
   assert.ok(s.robots.every((r) => r.returns > 0), 'un robot n’a jamais fini son cycle')
 })
 

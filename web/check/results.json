@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-11T09:45:10.702Z",
+  "date": "2026-10-12T12:05:17.493Z",
   "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A6) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "viewport": {
     "width": 1280,
@@ -11,94 +11,94 @@
   "status": "un seul run par flotte, solveur non validé",
   "results": [
     {
-      "frames": 300,
-      "fps": 60.00240009600385,
-      "p95": 16.799999999999272,
-      "max": 16.800000000000182,
+      "frames": 284,
+      "fps": 56.80340820449227,
+      "p95": 33.30000000000018,
+      "max": 33.400000000000546,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03820037841796875,
-      "totalMove": 38.98512472119109,
-      "binMove": 13.072021126747131,
-      "meanDt": 16.665999999999997,
+      "maxMove": 0.04680061340332031,
+      "totalMove": 37.06078704376422,
+      "binMove": 2.970640003681183,
+      "meanDt": 17.604577464788733,
       "drawCalls": 21,
-      "triangles": 254206
+      "triangles": 452094
     },
     {
-      "frames": 300,
-      "fps": 60.002400096003825,
-      "p95": 16.700000000000728,
-      "max": 16.80000000000109,
+      "frames": 258,
+      "fps": 51.60309618577116,
+      "p95": 33.30000000000109,
+      "max": 33.5,
       "robot": true,
       "count": 100,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03780007362365723,
-      "totalMove": 156.13782464610276,
-      "binMove": 29.237961769104004,
-      "meanDt": 16.666000000000004,
+      "maxMove": 0.06760025024414062,
+      "totalMove": 89.9513342233723,
+      "binMove": 4.680439889431,
+      "meanDt": 19.378682170542632,
       "drawCalls": 21,
-      "triangles": 463966
+      "triangles": 661854
     },
     {
-      "frames": 300,
-      "fps": 60.00360021601295,
+      "frames": 287,
+      "fps": 57.59466998454779,
       "p95": 16.799999999999272,
-      "max": 16.80000000000291,
+      "max": 33.400000000001455,
       "robot": true,
       "count": 300,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03740119934082031,
-      "totalMove": 210.01782738972398,
-      "binMove": 27.545851349830627,
-      "meanDt": 16.66566666666667,
+      "maxMove": 0.04820060729980469,
+      "totalMove": 219.8645822850121,
+      "binMove": 23.79134464263916,
+      "meanDt": 17.362717770034838,
       "drawCalls": 21,
-      "triangles": 988366
+      "triangles": 1186254
     }
   ],
   "layouts": [
     {
       "preset": "dense",
-      "columns": 80,
+      "columns": 192,
       "levels": 4,
       "stations": 4,
-      "frames": 301,
-      "fps": 60.00318953831431,
-      "p95": 16.700000000004366,
-      "max": 16.80000000000291,
+      "frames": 245,
+      "fps": 49.00196007840311,
+      "p95": 33.400000000001455,
+      "max": 33.5,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03940010070800781,
-      "totalMove": 32.697813904416066,
-      "binMove": 3.7188202142715454,
-      "meanDt": 16.665780730897016,
+      "maxMove": 0.05260038375854492,
+      "totalMove": 40.44745006132136,
+      "binMove": 0.36162006855010986,
+      "meanDt": 20.40734693877552,
       "drawCalls": 21,
-      "triangles": 551038
+      "triangles": 1243646
     },
     {
       "preset": "large",
-      "columns": 120,
+      "columns": 300,
       "levels": 6,
       "stations": 6,
-      "frames": 300,
-      "fps": 60.00120002400046,
-      "p95": 16.799999999995634,
-      "max": 16.80000000000291,
+      "frames": 226,
+      "fps": 44.90185170468088,
+      "p95": 33.39999999999418,
+      "max": 33.5,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.038399696350097656,
-      "totalMove": 34.88408094734075,
-      "binMove": 14.18747091293335,
-      "meanDt": 16.666333333333338,
+      "maxMove": 0.062000274658203125,
+      "totalMove": 35.977350840193324,
+      "binMove": 8.55571973323822,
+      "meanDt": 22.27079646017701,
       "drawCalls": 21,
-      "triangles": 1074894
+      "triangles": 2599854
     }
   ],
   "geometry": {
@@ -127,82 +127,82 @@
       "champs vides/hors limite/fractionnaires refusés",
       "50 annulations avec assertions du brouillon après chaque action",
       "dernier rack/station protégés, bornes du curseur et placement Espace",
-      "application pendant la lecture conserve la lecture"
+      "passer par Concevoir met en pause ; plan appliqué prêt à lancer à t = 0"
     ],
     "speeds": [
       {
         "speed": 1,
-        "ticks": 5,
-        "seconds": 0.5110999999046326
+        "ticks": 6,
+        "seconds": 0.5007999999523163
       },
       {
         "speed": 2,
         "ticks": 10,
-        "seconds": 0.5092999999523162
+        "seconds": 0.5125
       },
       {
         "speed": 5,
-        "ticks": 26,
-        "seconds": 0.5024000000953674
+        "ticks": 25,
+        "seconds": 0.5115
       },
       {
         "speed": 10,
-        "ticks": 50,
-        "seconds": 0.5026000000238419
+        "ticks": 52,
+        "seconds": 0.5163999999761582
       }
     ],
     "stress": [
       {
         "preset": "dense",
-        "bins": 320,
-        "frames": 300,
-        "fps": 60.00240009600385,
-        "p95": 16.799999999999272,
-        "max": 16.80000000000291,
+        "bins": 768,
+        "frames": 278,
+        "fps": 55.60222408896361,
+        "p95": 33.30000000000291,
+        "max": 33.5,
         "robot": true,
         "count": 220,
         "instanced": true,
         "still": 0,
-        "maxMove": 0.03860044479370117,
-        "totalMove": 163.1600755388017,
-        "binMove": 19.416460037231445,
-        "meanDt": 16.665999999999997,
+        "maxMove": 0.04700005054473877,
+        "totalMove": 154.0734655746996,
+        "binMove": 16.683059811592102,
+        "meanDt": 17.98489208633092,
         "drawCalls": 21,
-        "triangles": 1075438
+        "triangles": 1768046
       },
       {
         "preset": "large",
-        "bins": 720,
-        "frames": 300,
-        "fps": 60.00240009600389,
-        "p95": 16.799999999995634,
-        "max": 16.80000000000291,
-        "robot": true,
-        "count": 300,
-        "instanced": true,
-        "still": 0,
-        "maxMove": 0.03940010070800781,
-        "totalMove": 186.8181458163014,
-        "binMove": 23.167440235614777,
-        "meanDt": 16.665999999999986,
-        "drawCalls": 21,
-        "triangles": 1809054
-      },
-      {
-        "preset": "maximum",
-        "bins": 1920,
-        "frames": 221,
-        "fps": 44.05549796666938,
+        "bins": 1800,
+        "frames": 197,
+        "fps": 39.53283030984109,
         "p95": 33.400000000001455,
         "max": 33.400000000001455,
         "robot": true,
         "count": 300,
         "instanced": true,
         "still": 0,
-        "maxMove": 0.05440044403076172,
-        "totalMove": 83.63099720767806,
-        "binMove": 18.448920369148254,
-        "meanDt": 22.698642533936624,
+        "maxMove": 0.07120132446289062,
+        "totalMove": 125.35879046983133,
+        "binMove": 15.67121958732605,
+        "meanDt": 25.295431472081205,
+        "drawCalls": 21,
+        "triangles": 3334014
+      },
+      {
+        "preset": "maximum",
+        "bins": 1920,
+        "frames": 210,
+        "fps": 42.00168006720266,
+        "p95": 33.400000000001455,
+        "max": 50.10000000000582,
+        "robot": true,
+        "count": 300,
+        "instanced": true,
+        "still": 0,
+        "maxMove": 0.09200286865234375,
+        "totalMove": 81.51435826053624,
+        "binMove": 12.686459481716156,
+        "meanDt": 23.808571428571444,
         "drawCalls": 21,
         "triangles": 3380622
       }
@@ -239,25 +239,2060 @@
     ],
     "camera": true
   },
+  "classic": {
+    "frames": 245,
+    "fps": 49.00196007840314,
+    "p95": 33.399999999999636,
+    "max": 33.400000000000546,
+    "robot": true,
+    "count": 72,
+    "instanced": true,
+    "still": 0,
+    "maxMove": 0.062000274658203125,
+    "totalMove": 38.301061490349745,
+    "binMove": 11.727175533771515,
+    "meanDt": 20.40734693877551,
+    "drawCalls": 22,
+    "triangles": 1382294,
+    "marked": 192,
+    "classicMemory": {
+      "geometries": 18,
+      "textures": 7
+    },
+    "modernMemory": {
+      "geometries": 17,
+      "textures": 7
+    },
+    "configurations": [
+      {
+        "name": "Classique",
+        "generation": "classic"
+      },
+      {
+        "name": "2025+",
+        "generation": "2025+"
+      }
+    ]
+  },
+  "theme": {
+    "colors": {
+      "bg": "#f1f4f6",
+      "panel": "#fff",
+      "surface": "#f7f9fa",
+      "text": "#253340",
+      "muted": "#526372",
+      "accent": "#235f8c",
+      "on-accent": "#fff",
+      "error": "#a33f24",
+      "control-line": "#7c8d9b",
+      "rack": "#607482",
+      "series-0": "#3987e5",
+      "series-1": "#d95926",
+      "series-2": "#199e70"
+    },
+    "scheme": "light",
+    "background": "f1f4f6",
+    "floor": "d5dde2",
+    "controls": 3,
+    "cut": [
+      238,
+      241,
+      243,
+      255
+    ],
+    "ratios": [
+      {
+        "fg": "text",
+        "bg": "bg",
+        "ratio": 11.690370761518269
+      },
+      {
+        "fg": "muted",
+        "bg": "bg",
+        "ratio": 5.613842526708778
+      },
+      {
+        "fg": "error",
+        "bg": "bg",
+        "ratio": 5.771839798619378
+      },
+      {
+        "fg": "accent",
+        "bg": "bg",
+        "ratio": 6.158391636646425
+      },
+      {
+        "fg": "text",
+        "bg": "panel",
+        "ratio": 12.913329426224491
+      },
+      {
+        "fg": "muted",
+        "bg": "panel",
+        "ratio": 6.201120509622224
+      },
+      {
+        "fg": "error",
+        "bg": "panel",
+        "ratio": 6.37564626780796
+      },
+      {
+        "fg": "accent",
+        "bg": "panel",
+        "ratio": 6.802636251837137
+      },
+      {
+        "fg": "text",
+        "bg": "surface",
+        "ratio": 12.228018783508723
+      },
+      {
+        "fg": "muted",
+        "bg": "surface",
+        "ratio": 5.8720269240921565
+      },
+      {
+        "fg": "error",
+        "bg": "surface",
+        "ratio": 6.037290596911293
+      },
+      {
+        "fg": "accent",
+        "bg": "surface",
+        "ratio": 6.4416202142194
+      }
+    ]
+  },
+  "lab": {
+    "stats": {
+      "mean": 226.05,
+      "served": 13,
+      "time": 226.70000000000002
+    },
+    "frames": {
+      "fps": 58.19158459954136,
+      "p95": 16.799999999999272,
+      "max": 33.400000000001455
+    },
+    "errors": []
+  },
+  "exploration": {
+    "during": {
+      "frames": 30,
+      "fps": 59.99999999999999,
+      "p95": 16.799999999999272,
+      "max": 16.799999999999272,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.03759956359863281,
+      "totalMove": 0.9996013641357422,
+      "binMove": 0,
+      "meanDt": 16.666666666666668,
+      "drawCalls": 21,
+      "triangles": 452094
+    },
+    "workersCreated": 8,
+    "plans": [
+      {
+        "name": "Bloc 1 · allée 1",
+        "slots": 1100,
+        "front": true,
+        "saturation": null
+      },
+      {
+        "name": "Bloc 1 · allée 5",
+        "slots": 600,
+        "front": false,
+        "saturation": null
+      },
+      {
+        "name": "Bloc 1 · allée 9",
+        "slots": 400,
+        "front": false,
+        "saturation": null
+      },
+      {
+        "name": "Bloc 2 · allée 5",
+        "slots": 800,
+        "front": false,
+        "saturation": null
+      },
+      {
+        "name": "Bloc 2 · allée 9",
+        "slots": 600,
+        "front": false,
+        "saturation": null
+      }
+    ],
+    "replications": 30
+  },
+  "control": {
+    "during": {
+      "frames": 30,
+      "fps": 59.99999999999999,
+      "p95": 16.700000000000728,
+      "max": 16.700000000000728,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.03640174865722656,
+      "totalMove": 4.6953006982803345,
+      "binMove": 0.6993000507354736,
+      "meanDt": 16.666666666666668,
+      "drawCalls": 21,
+      "triangles": 452094
+    },
+    "params": {
+      "configurations": [
+        {
+          "name": "Trajet entier",
+          "layout": {
+            "width": 48,
+            "depth": 32,
+            "levels": 4,
+            "fill": 100,
+            "storage": "random",
+            "racks": [
+              {
+                "x": 6,
+                "z": 8
+              },
+              {
+                "x": 6,
+                "z": 9
+              },
+              {
+                "x": 6,
+                "z": 10
+              },
+              {
+                "x": 6,
+                "z": 11
+              },
+              {
+                "x": 6,
+                "z": 12
+              },
+              {
+                "x": 6,
+                "z": 13
+              },
+              {
+                "x": 6,
+                "z": 14
+              },
+              {
+                "x": 6,
+                "z": 15
+              },
+              {
+                "x": 6,
+                "z": 16
+              },
+              {
+                "x": 6,
+                "z": 17
+              },
+              {
+                "x": 6,
+                "z": 18
+              },
+              {
+                "x": 6,
+                "z": 19
+              },
+              {
+                "x": 6,
+                "z": 20
+              },
+              {
+                "x": 6,
+                "z": 21
+              },
+              {
+                "x": 6,
+                "z": 22
+              },
+              {
+                "x": 6,
+                "z": 23
+              },
+              {
+                "x": 16,
+                "z": 8
+              },
+              {
+                "x": 16,
+                "z": 9
+              },
+              {
+                "x": 16,
+                "z": 10
+              },
+              {
+                "x": 16,
+                "z": 11
+              },
+              {
+                "x": 16,
+                "z": 12
+              },
+              {
+                "x": 16,
+                "z": 13
+              },
+              {
+                "x": 16,
+                "z": 14
+              },
+              {
+                "x": 16,
+                "z": 15
+              },
+              {
+                "x": 16,
+                "z": 16
+              },
+              {
+                "x": 16,
+                "z": 17
+              },
+              {
+                "x": 16,
+                "z": 18
+              },
+              {
+                "x": 16,
+                "z": 19
+              },
+              {
+                "x": 16,
+                "z": 20
+              },
+              {
+                "x": 16,
+                "z": 21
+              },
+              {
+                "x": 16,
+                "z": 22
+              },
+              {
+                "x": 16,
+                "z": 23
+              },
+              {
+                "x": 26,
+                "z": 8
+              },
+              {
+                "x": 26,
+                "z": 9
+              },
+              {
+                "x": 26,
+                "z": 10
+              },
+              {
+                "x": 26,
+                "z": 11
+              },
+              {
+                "x": 26,
+                "z": 12
+              },
+              {
+                "x": 26,
+                "z": 13
+              },
+              {
+                "x": 26,
+                "z": 14
+              },
+              {
+                "x": 26,
+                "z": 15
+              },
+              {
+                "x": 26,
+                "z": 16
+              },
+              {
+                "x": 26,
+                "z": 17
+              },
+              {
+                "x": 26,
+                "z": 18
+              },
+              {
+                "x": 26,
+                "z": 19
+              },
+              {
+                "x": 26,
+                "z": 20
+              },
+              {
+                "x": 26,
+                "z": 21
+              },
+              {
+                "x": 26,
+                "z": 22
+              },
+              {
+                "x": 26,
+                "z": 23
+              },
+              {
+                "x": 36,
+                "z": 8
+              },
+              {
+                "x": 36,
+                "z": 9
+              },
+              {
+                "x": 36,
+                "z": 10
+              },
+              {
+                "x": 36,
+                "z": 11
+              },
+              {
+                "x": 36,
+                "z": 12
+              },
+              {
+                "x": 36,
+                "z": 13
+              },
+              {
+                "x": 36,
+                "z": 14
+              },
+              {
+                "x": 36,
+                "z": 15
+              },
+              {
+                "x": 36,
+                "z": 16
+              },
+              {
+                "x": 36,
+                "z": 17
+              },
+              {
+                "x": 36,
+                "z": 18
+              },
+              {
+                "x": 36,
+                "z": 19
+              },
+              {
+                "x": 36,
+                "z": 20
+              },
+              {
+                "x": 36,
+                "z": 21
+              },
+              {
+                "x": 36,
+                "z": 22
+              },
+              {
+                "x": 36,
+                "z": 23
+              }
+            ],
+            "stations": [
+              {
+                "x": 8,
+                "z": 28
+              },
+              {
+                "x": 18,
+                "z": 28
+              },
+              {
+                "x": 28,
+                "z": 28
+              },
+              {
+                "x": 38,
+                "z": 28
+              }
+            ]
+          },
+          "control": {
+            "method": "whole",
+            "horizon": 8,
+            "budget": 100000
+          }
+        },
+        {
+          "name": "Fenêtre glissante",
+          "layout": {
+            "width": 48,
+            "depth": 32,
+            "levels": 4,
+            "fill": 100,
+            "storage": "random",
+            "racks": [
+              {
+                "x": 6,
+                "z": 8
+              },
+              {
+                "x": 6,
+                "z": 9
+              },
+              {
+                "x": 6,
+                "z": 10
+              },
+              {
+                "x": 6,
+                "z": 11
+              },
+              {
+                "x": 6,
+                "z": 12
+              },
+              {
+                "x": 6,
+                "z": 13
+              },
+              {
+                "x": 6,
+                "z": 14
+              },
+              {
+                "x": 6,
+                "z": 15
+              },
+              {
+                "x": 6,
+                "z": 16
+              },
+              {
+                "x": 6,
+                "z": 17
+              },
+              {
+                "x": 6,
+                "z": 18
+              },
+              {
+                "x": 6,
+                "z": 19
+              },
+              {
+                "x": 6,
+                "z": 20
+              },
+              {
+                "x": 6,
+                "z": 21
+              },
+              {
+                "x": 6,
+                "z": 22
+              },
+              {
+                "x": 6,
+                "z": 23
+              },
+              {
+                "x": 16,
+                "z": 8
+              },
+              {
+                "x": 16,
+                "z": 9
+              },
+              {
+                "x": 16,
+                "z": 10
+              },
+              {
+                "x": 16,
+                "z": 11
+              },
+              {
+                "x": 16,
+                "z": 12
+              },
+              {
+                "x": 16,
+                "z": 13
+              },
+              {
+                "x": 16,
+                "z": 14
+              },
+              {
+                "x": 16,
+                "z": 15
+              },
+              {
+                "x": 16,
+                "z": 16
+              },
+              {
+                "x": 16,
+                "z": 17
+              },
+              {
+                "x": 16,
+                "z": 18
+              },
+              {
+                "x": 16,
+                "z": 19
+              },
+              {
+                "x": 16,
+                "z": 20
+              },
+              {
+                "x": 16,
+                "z": 21
+              },
+              {
+                "x": 16,
+                "z": 22
+              },
+              {
+                "x": 16,
+                "z": 23
+              },
+              {
+                "x": 26,
+                "z": 8
+              },
+              {
+                "x": 26,
+                "z": 9
+              },
+              {
+                "x": 26,
+                "z": 10
+              },
+              {
+                "x": 26,
+                "z": 11
+              },
+              {
+                "x": 26,
+                "z": 12
+              },
+              {
+                "x": 26,
+                "z": 13
+              },
+              {
+                "x": 26,
+                "z": 14
+              },
+              {
+                "x": 26,
+                "z": 15
+              },
+              {
+                "x": 26,
+                "z": 16
+              },
+              {
+                "x": 26,
+                "z": 17
+              },
+              {
+                "x": 26,
+                "z": 18
+              },
+              {
+                "x": 26,
+                "z": 19
+              },
+              {
+                "x": 26,
+                "z": 20
+              },
+              {
+                "x": 26,
+                "z": 21
+              },
+              {
+                "x": 26,
+                "z": 22
+              },
+              {
+                "x": 26,
+                "z": 23
+              },
+              {
+                "x": 36,
+                "z": 8
+              },
+              {
+                "x": 36,
+                "z": 9
+              },
+              {
+                "x": 36,
+                "z": 10
+              },
+              {
+                "x": 36,
+                "z": 11
+              },
+              {
+                "x": 36,
+                "z": 12
+              },
+              {
+                "x": 36,
+                "z": 13
+              },
+              {
+                "x": 36,
+                "z": 14
+              },
+              {
+                "x": 36,
+                "z": 15
+              },
+              {
+                "x": 36,
+                "z": 16
+              },
+              {
+                "x": 36,
+                "z": 17
+              },
+              {
+                "x": 36,
+                "z": 18
+              },
+              {
+                "x": 36,
+                "z": 19
+              },
+              {
+                "x": 36,
+                "z": 20
+              },
+              {
+                "x": 36,
+                "z": 21
+              },
+              {
+                "x": 36,
+                "z": 22
+              },
+              {
+                "x": 36,
+                "z": 23
+              }
+            ],
+            "stations": [
+              {
+                "x": 8,
+                "z": 28
+              },
+              {
+                "x": 18,
+                "z": 28
+              },
+              {
+                "x": 28,
+                "z": 28
+              },
+              {
+                "x": 38,
+                "z": 28
+              }
+            ]
+          },
+          "control": {
+            "method": "window",
+            "horizon": 8,
+            "budget": 100000
+          }
+        }
+      ],
+      "base": "footprint",
+      "fleets": [
+        2,
+        4
+      ],
+      "replications": 2,
+      "seconds": 800,
+      "seed": 3,
+      "dtSecondes": 0.1,
+      "fenetreObservationSecondes": 10
+    },
+    "results": [
+      {
+        "configuration": 0,
+        "fleet": 2,
+        "warmupSeconds": 100,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          100
+        ],
+        "throughput": [
+          56.57142857142858,
+          92.57142857142857
+        ],
+        "lostRatio": [
+          0.6633663366336634,
+          0.3496296296296296
+        ],
+        "meanThroughput": {
+          "mean": 74.57142857142857,
+          "half": 228.70799999999994
+        },
+        "meanLostRatio": {
+          "mean": 0.5064979831316465,
+          "half": 1.9931692995966266
+        }
+      },
+      {
+        "configuration": 0,
+        "fleet": 4,
+        "warmupSeconds": 0,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          0
+        ],
+        "throughput": [
+          72,
+          90
+        ],
+        "lostRatio": [
+          1.0080226521944313,
+          0.844597927972373
+        ],
+        "meanThroughput": {
+          "mean": 81,
+          "half": 114.354
+        },
+        "meanLostRatio": {
+          "mean": 0.9263102900834022,
+          "half": 1.0382372729827365
+        }
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "warmupSeconds": 100,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          100
+        ],
+        "throughput": [
+          61.714285714285715,
+          92.57142857142857
+        ],
+        "lostRatio": [
+          0.5874603174603175,
+          0.366545981173063
+        ],
+        "meanThroughput": {
+          "mean": 77.14285714285714,
+          "half": 196.03542857142855
+        },
+        "meanLostRatio": {
+          "mean": 0.4770031493166902,
+          "half": 1.4034687784329276
+        }
+      },
+      {
+        "configuration": 1,
+        "fleet": 4,
+        "warmupSeconds": 0,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          0
+        ],
+        "throughput": [
+          72,
+          90
+        ],
+        "lostRatio": [
+          0.9522416234072676,
+          0.8526887025160336
+        ],
+        "meanThroughput": {
+          "mean": 81,
+          "half": 114.354
+        },
+        "meanLostRatio": {
+          "mean": 0.9024651629616506,
+          "half": 0.6324597064220097
+        }
+      }
+    ],
+    "operations": [
+      {
+        "configuration": 0,
+        "fleet": 2,
+        "seed": 3093350482,
+        "operations": 182160,
+        "searches": 62,
+        "exhausted": 0
+      },
+      {
+        "configuration": 0,
+        "fleet": 2,
+        "seed": 166052715,
+        "operations": 141780,
+        "searches": 104,
+        "exhausted": 0
+      },
+      {
+        "configuration": 0,
+        "fleet": 4,
+        "seed": 3093350482,
+        "operations": 244092,
+        "searches": 78,
+        "exhausted": 0
+      },
+      {
+        "configuration": 0,
+        "fleet": 4,
+        "seed": 166052715,
+        "operations": 203624,
+        "searches": 103,
+        "exhausted": 0
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "seed": 3093350482,
+        "operations": 2237968,
+        "searches": 279,
+        "exhausted": 0
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "seed": 166052715,
+        "operations": 1961749,
+        "searches": 253,
+        "exhausted": 0
+      },
+      {
+        "configuration": 1,
+        "fleet": 4,
+        "seed": 3093350482,
+        "operations": 3111117,
+        "searches": 385,
+        "exhausted": 0
+      },
+      {
+        "configuration": 1,
+        "fleet": 4,
+        "seed": 166052715,
+        "operations": 2762522,
+        "searches": 353,
+        "exhausted": 0
+      }
+    ],
+    "timings": [
+      {
+        "configuration": 0,
+        "fleet": 2,
+        "seed": 3093350482,
+        "seconds": 0.052700000047683715
+      },
+      {
+        "configuration": 0,
+        "fleet": 2,
+        "seed": 166052715,
+        "seconds": 0.03719999992847443
+      },
+      {
+        "configuration": 0,
+        "fleet": 4,
+        "seed": 3093350482,
+        "seconds": 0.01839999997615814
+      },
+      {
+        "configuration": 0,
+        "fleet": 4,
+        "seed": 166052715,
+        "seconds": 0.015700000047683717
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "seed": 3093350482,
+        "seconds": 0.16089999997615814
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "seed": 166052715,
+        "seconds": 0.07619999992847443
+      },
+      {
+        "configuration": 1,
+        "fleet": 4,
+        "seed": 3093350482,
+        "seconds": 0.178
+      },
+      {
+        "configuration": 1,
+        "fleet": 4,
+        "seed": 166052715,
+        "seconds": 0.1285
+      }
+    ]
+  },
+  "profiles": {
+    "reports": [
+      {
+        "profile": "lifts",
+        "stats": {
+          "frames": 120,
+          "fps": 60.00300015000767,
+          "p95": 16.700000000004366,
+          "max": 16.80000000000291,
+          "robot": true,
+          "count": 4,
+          "instanced": true,
+          "still": 0,
+          "maxMove": 0.37999987602233887,
+          "totalMove": 66.0037637342661,
+          "binMove": 2,
+          "meanDt": 16.665833333333286,
+          "drawCalls": 22,
+          "triangles": 43918
+        },
+        "cycles": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "resources": [
+          18,
+          7
+        ]
+      },
+      {
+        "profile": "autostore",
+        "stats": {
+          "frames": 120,
+          "fps": 60.00600060006,
+          "p95": 16.700000000000728,
+          "max": 16.800000000000182,
+          "robot": true,
+          "count": 4,
+          "instanced": true,
+          "still": 1,
+          "maxMove": 0.3880000114440918,
+          "totalMove": 51.5583337717874,
+          "binMove": 26.60750025510788,
+          "meanDt": 16.665000000000003,
+          "drawCalls": 18,
+          "triangles": 23110
+        },
+        "cycles": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "resources": [
+          15,
+          7
+        ]
+      }
+    ],
+    "params": {
+      "configurations": [
+        {
+          "name": "Profil skypod",
+          "layout": {
+            "width": 16,
+            "depth": 16,
+            "levels": 3,
+            "fill": 100,
+            "storage": "random",
+            "profile": "skypod",
+            "racks": [
+              {
+                "x": 2,
+                "z": 2
+              },
+              {
+                "x": 2,
+                "z": 3
+              },
+              {
+                "x": 2,
+                "z": 4
+              },
+              {
+                "x": 12,
+                "z": 2
+              },
+              {
+                "x": 12,
+                "z": 3
+              },
+              {
+                "x": 12,
+                "z": 4
+              }
+            ],
+            "stations": [
+              {
+                "x": 0,
+                "z": 14
+              },
+              {
+                "x": 14,
+                "z": 14
+              }
+            ]
+          }
+        },
+        {
+          "name": "Profil lifts",
+          "layout": {
+            "width": 16,
+            "depth": 16,
+            "levels": 3,
+            "fill": 100,
+            "storage": "random",
+            "profile": "lifts",
+            "lifts": [
+              {
+                "x": 0,
+                "z": 0
+              },
+              {
+                "x": 14,
+                "z": 0
+              }
+            ],
+            "liftSteps": 20,
+            "racks": [
+              {
+                "x": 2,
+                "z": 2
+              },
+              {
+                "x": 2,
+                "z": 3
+              },
+              {
+                "x": 2,
+                "z": 4
+              },
+              {
+                "x": 12,
+                "z": 2
+              },
+              {
+                "x": 12,
+                "z": 3
+              },
+              {
+                "x": 12,
+                "z": 4
+              }
+            ],
+            "stations": [
+              {
+                "x": 0,
+                "z": 14
+              },
+              {
+                "x": 14,
+                "z": 14
+              }
+            ]
+          }
+        },
+        {
+          "name": "Profil autostore",
+          "layout": {
+            "width": 16,
+            "depth": 16,
+            "levels": 3,
+            "fill": 100,
+            "storage": "random",
+            "profile": "autostore",
+            "racks": [
+              {
+                "x": 2,
+                "z": 2
+              },
+              {
+                "x": 2,
+                "z": 3
+              },
+              {
+                "x": 2,
+                "z": 4
+              },
+              {
+                "x": 12,
+                "z": 2
+              },
+              {
+                "x": 12,
+                "z": 3
+              },
+              {
+                "x": 12,
+                "z": 4
+              }
+            ],
+            "stations": [
+              {
+                "x": 0,
+                "z": 14
+              },
+              {
+                "x": 14,
+                "z": 14
+              }
+            ]
+          }
+        }
+      ],
+      "base": "capacity",
+      "fleets": [
+        2
+      ],
+      "replications": 2,
+      "seconds": 800,
+      "seed": 3,
+      "dtSecondes": 0.1,
+      "fenetreObservationSecondes": 10
+    },
+    "results": [
+      {
+        "configuration": 0,
+        "fleet": 2,
+        "warmupSeconds": 0,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          0
+        ],
+        "throughput": [
+          126.00000000000001,
+          135
+        ],
+        "lostRatio": [
+          0.27289955780164243,
+          0.27696234843650286
+        ],
+        "meanThroughput": {
+          "mean": 130.5,
+          "half": 57.17699999999991
+        },
+        "meanLostRatio": {
+          "mean": 0.2749309531190727,
+          "half": 0.025810908903268277
+        }
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "warmupSeconds": 0,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          0
+        ],
+        "throughput": [
+          81,
+          81
+        ],
+        "lostRatio": [
+          0.22494117647058823,
+          0.1809872029250457
+        ],
+        "meanThroughput": {
+          "mean": 81,
+          "half": 0
+        },
+        "meanLostRatio": {
+          "mean": 0.20296418969781696,
+          "half": 0.2792395939348317
+        }
+      },
+      {
+        "configuration": 2,
+        "fleet": 2,
+        "warmupSeconds": 0,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          0
+        ],
+        "throughput": [
+          54,
+          63.00000000000001
+        ],
+        "lostRatio": [
+          0.7188908145580589,
+          0.7305605786618445
+        ],
+        "meanThroughput": {
+          "mean": 58.5,
+          "half": 57.17700000000004
+        },
+        "meanLostRatio": {
+          "mean": 0.7247256966099518,
+          "half": 0.07413801135135004
+        }
+      }
+    ]
+  },
+  "rhcr": {
+    "live": {
+      "frames": 120,
+      "fps": 60.00300015000751,
+      "p95": 16.700000000000728,
+      "max": 16.800000000000182,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 9,
+      "maxMove": 0.04699993133544922,
+      "totalMove": 13.881998538970947,
+      "binMove": 0,
+      "meanDt": 16.66583333333333,
+      "drawCalls": 21,
+      "triangles": 452094
+    },
+    "fleets": [
+      {
+        "fleet": 100,
+        "frames": 120,
+        "fps": 59.50609937518595,
+        "p95": 16.800000000000182,
+        "max": 33.30000000000018,
+        "robot": true,
+        "count": 100,
+        "instanced": true,
+        "still": 10,
+        "maxMove": 0.05200004577636719,
+        "totalMove": 68.45920991504948,
+        "binMove": 0,
+        "meanDt": 16.805000000000003,
+        "drawCalls": 21,
+        "triangles": 661854
+      },
+      {
+        "fleet": 300,
+        "frames": 102,
+        "fps": 51.00255012750639,
+        "p95": 33.30000000000109,
+        "max": 83.29999999999927,
+        "robot": true,
+        "count": 300,
+        "instanced": true,
+        "still": 5,
+        "maxMove": 0.1718006134033203,
+        "totalMove": 178.59456365844554,
+        "binMove": 0,
+        "meanDt": 19.606862745098034,
+        "drawCalls": 21,
+        "triangles": 1186254
+      }
+    ],
+    "params": {
+      "configurations": [
+        {
+          "name": "Trajet entier",
+          "layout": {
+            "width": 48,
+            "depth": 32,
+            "levels": 4,
+            "fill": 100,
+            "storage": "random",
+            "racks": [
+              {
+                "x": 6,
+                "z": 8
+              },
+              {
+                "x": 6,
+                "z": 9
+              },
+              {
+                "x": 6,
+                "z": 10
+              },
+              {
+                "x": 6,
+                "z": 11
+              },
+              {
+                "x": 6,
+                "z": 12
+              },
+              {
+                "x": 6,
+                "z": 13
+              },
+              {
+                "x": 6,
+                "z": 14
+              },
+              {
+                "x": 6,
+                "z": 15
+              },
+              {
+                "x": 6,
+                "z": 16
+              },
+              {
+                "x": 6,
+                "z": 17
+              },
+              {
+                "x": 6,
+                "z": 18
+              },
+              {
+                "x": 6,
+                "z": 19
+              },
+              {
+                "x": 6,
+                "z": 20
+              },
+              {
+                "x": 6,
+                "z": 21
+              },
+              {
+                "x": 6,
+                "z": 22
+              },
+              {
+                "x": 6,
+                "z": 23
+              },
+              {
+                "x": 16,
+                "z": 8
+              },
+              {
+                "x": 16,
+                "z": 9
+              },
+              {
+                "x": 16,
+                "z": 10
+              },
+              {
+                "x": 16,
+                "z": 11
+              },
+              {
+                "x": 16,
+                "z": 12
+              },
+              {
+                "x": 16,
+                "z": 13
+              },
+              {
+                "x": 16,
+                "z": 14
+              },
+              {
+                "x": 16,
+                "z": 15
+              },
+              {
+                "x": 16,
+                "z": 16
+              },
+              {
+                "x": 16,
+                "z": 17
+              },
+              {
+                "x": 16,
+                "z": 18
+              },
+              {
+                "x": 16,
+                "z": 19
+              },
+              {
+                "x": 16,
+                "z": 20
+              },
+              {
+                "x": 16,
+                "z": 21
+              },
+              {
+                "x": 16,
+                "z": 22
+              },
+              {
+                "x": 16,
+                "z": 23
+              },
+              {
+                "x": 26,
+                "z": 8
+              },
+              {
+                "x": 26,
+                "z": 9
+              },
+              {
+                "x": 26,
+                "z": 10
+              },
+              {
+                "x": 26,
+                "z": 11
+              },
+              {
+                "x": 26,
+                "z": 12
+              },
+              {
+                "x": 26,
+                "z": 13
+              },
+              {
+                "x": 26,
+                "z": 14
+              },
+              {
+                "x": 26,
+                "z": 15
+              },
+              {
+                "x": 26,
+                "z": 16
+              },
+              {
+                "x": 26,
+                "z": 17
+              },
+              {
+                "x": 26,
+                "z": 18
+              },
+              {
+                "x": 26,
+                "z": 19
+              },
+              {
+                "x": 26,
+                "z": 20
+              },
+              {
+                "x": 26,
+                "z": 21
+              },
+              {
+                "x": 26,
+                "z": 22
+              },
+              {
+                "x": 26,
+                "z": 23
+              },
+              {
+                "x": 36,
+                "z": 8
+              },
+              {
+                "x": 36,
+                "z": 9
+              },
+              {
+                "x": 36,
+                "z": 10
+              },
+              {
+                "x": 36,
+                "z": 11
+              },
+              {
+                "x": 36,
+                "z": 12
+              },
+              {
+                "x": 36,
+                "z": 13
+              },
+              {
+                "x": 36,
+                "z": 14
+              },
+              {
+                "x": 36,
+                "z": 15
+              },
+              {
+                "x": 36,
+                "z": 16
+              },
+              {
+                "x": 36,
+                "z": 17
+              },
+              {
+                "x": 36,
+                "z": 18
+              },
+              {
+                "x": 36,
+                "z": 19
+              },
+              {
+                "x": 36,
+                "z": 20
+              },
+              {
+                "x": 36,
+                "z": 21
+              },
+              {
+                "x": 36,
+                "z": 22
+              },
+              {
+                "x": 36,
+                "z": 23
+              }
+            ],
+            "stations": [
+              {
+                "x": 8,
+                "z": 28
+              },
+              {
+                "x": 18,
+                "z": 28
+              },
+              {
+                "x": 28,
+                "z": 28
+              },
+              {
+                "x": 38,
+                "z": 28
+              }
+            ]
+          },
+          "control": {
+            "method": "whole",
+            "horizon": 8,
+            "budget": 100000
+          }
+        },
+        {
+          "name": "RHCR priorisé",
+          "layout": {
+            "width": 48,
+            "depth": 32,
+            "levels": 4,
+            "fill": 100,
+            "storage": "random",
+            "racks": [
+              {
+                "x": 6,
+                "z": 8
+              },
+              {
+                "x": 6,
+                "z": 9
+              },
+              {
+                "x": 6,
+                "z": 10
+              },
+              {
+                "x": 6,
+                "z": 11
+              },
+              {
+                "x": 6,
+                "z": 12
+              },
+              {
+                "x": 6,
+                "z": 13
+              },
+              {
+                "x": 6,
+                "z": 14
+              },
+              {
+                "x": 6,
+                "z": 15
+              },
+              {
+                "x": 6,
+                "z": 16
+              },
+              {
+                "x": 6,
+                "z": 17
+              },
+              {
+                "x": 6,
+                "z": 18
+              },
+              {
+                "x": 6,
+                "z": 19
+              },
+              {
+                "x": 6,
+                "z": 20
+              },
+              {
+                "x": 6,
+                "z": 21
+              },
+              {
+                "x": 6,
+                "z": 22
+              },
+              {
+                "x": 6,
+                "z": 23
+              },
+              {
+                "x": 16,
+                "z": 8
+              },
+              {
+                "x": 16,
+                "z": 9
+              },
+              {
+                "x": 16,
+                "z": 10
+              },
+              {
+                "x": 16,
+                "z": 11
+              },
+              {
+                "x": 16,
+                "z": 12
+              },
+              {
+                "x": 16,
+                "z": 13
+              },
+              {
+                "x": 16,
+                "z": 14
+              },
+              {
+                "x": 16,
+                "z": 15
+              },
+              {
+                "x": 16,
+                "z": 16
+              },
+              {
+                "x": 16,
+                "z": 17
+              },
+              {
+                "x": 16,
+                "z": 18
+              },
+              {
+                "x": 16,
+                "z": 19
+              },
+              {
+                "x": 16,
+                "z": 20
+              },
+              {
+                "x": 16,
+                "z": 21
+              },
+              {
+                "x": 16,
+                "z": 22
+              },
+              {
+                "x": 16,
+                "z": 23
+              },
+              {
+                "x": 26,
+                "z": 8
+              },
+              {
+                "x": 26,
+                "z": 9
+              },
+              {
+                "x": 26,
+                "z": 10
+              },
+              {
+                "x": 26,
+                "z": 11
+              },
+              {
+                "x": 26,
+                "z": 12
+              },
+              {
+                "x": 26,
+                "z": 13
+              },
+              {
+                "x": 26,
+                "z": 14
+              },
+              {
+                "x": 26,
+                "z": 15
+              },
+              {
+                "x": 26,
+                "z": 16
+              },
+              {
+                "x": 26,
+                "z": 17
+              },
+              {
+                "x": 26,
+                "z": 18
+              },
+              {
+                "x": 26,
+                "z": 19
+              },
+              {
+                "x": 26,
+                "z": 20
+              },
+              {
+                "x": 26,
+                "z": 21
+              },
+              {
+                "x": 26,
+                "z": 22
+              },
+              {
+                "x": 26,
+                "z": 23
+              },
+              {
+                "x": 36,
+                "z": 8
+              },
+              {
+                "x": 36,
+                "z": 9
+              },
+              {
+                "x": 36,
+                "z": 10
+              },
+              {
+                "x": 36,
+                "z": 11
+              },
+              {
+                "x": 36,
+                "z": 12
+              },
+              {
+                "x": 36,
+                "z": 13
+              },
+              {
+                "x": 36,
+                "z": 14
+              },
+              {
+                "x": 36,
+                "z": 15
+              },
+              {
+                "x": 36,
+                "z": 16
+              },
+              {
+                "x": 36,
+                "z": 17
+              },
+              {
+                "x": 36,
+                "z": 18
+              },
+              {
+                "x": 36,
+                "z": 19
+              },
+              {
+                "x": 36,
+                "z": 20
+              },
+              {
+                "x": 36,
+                "z": 21
+              },
+              {
+                "x": 36,
+                "z": 22
+              },
+              {
+                "x": 36,
+                "z": 23
+              }
+            ],
+            "stations": [
+              {
+                "x": 8,
+                "z": 28
+              },
+              {
+                "x": 18,
+                "z": 28
+              },
+              {
+                "x": 28,
+                "z": 28
+              },
+              {
+                "x": 38,
+                "z": 28
+              }
+            ]
+          },
+          "control": {
+            "method": "rhcr",
+            "horizon": 8,
+            "budget": 100000
+          }
+        }
+      ],
+      "base": "footprint",
+      "fleets": [
+        2
+      ],
+      "replications": 2,
+      "seconds": 800,
+      "seed": 3,
+      "dtSecondes": 0.1,
+      "fenetreObservationSecondes": 10
+    },
+    "results": [
+      {
+        "configuration": 0,
+        "fleet": 2,
+        "warmupSeconds": 100,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          100
+        ],
+        "throughput": [
+          56.57142857142858,
+          92.57142857142857
+        ],
+        "lostRatio": [
+          0.6633663366336634,
+          0.3496296296296296
+        ],
+        "meanThroughput": {
+          "mean": 74.57142857142857,
+          "half": 228.70799999999994
+        },
+        "meanLostRatio": {
+          "mean": 0.5064979831316465,
+          "half": 1.9931692995966266
+        }
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "warmupSeconds": 0,
+        "detected": true,
+        "replicationWarmupSeconds": [
+          0,
+          0
+        ],
+        "throughput": [
+          54,
+          81
+        ],
+        "lostRatio": [
+          0.7515637530072173,
+          0.37776289350301406
+        ],
+        "meanThroughput": {
+          "mean": 67.5,
+          "half": 171.531
+        },
+        "meanLostRatio": {
+          "mean": 0.5646633232551157,
+          "half": 2.374756860430203
+        }
+      }
+    ]
+  },
   "scenario": {
     "transfer": {
-      "robot": 12,
-      "bin": 12,
+      "robot": 16,
+      "bin": 16,
       "level": 1,
       "progress": 1,
       "robotY": 1.600000023841858,
       "binY": 2.049999952316284,
-      "columns": 32,
-      "bins": 128
+      "columns": 64,
+      "bins": 256
     },
-    "completed": 1
+    "completed": 2
   },
   "campaign": {
     "during": {
       "frames": 120,
-      "fps": 59.99999999999999,
-      "p95": 16.700000000000728,
-      "max": 16.800000000000182,
+      "fps": 60.00300015000751,
+      "p95": 16.799999999999272,
+      "max": 16.799999999999272,
       "robot": true,
       "count": 20,
       "instanced": true,
@@ -265,9 +2300,9 @@
       "maxMove": 0,
       "totalMove": 0,
       "binMove": 0,
-      "meanDt": 16.666666666666668,
+      "meanDt": 16.66583333333333,
       "drawCalls": 21,
-      "triangles": 254206
+      "triangles": 452094
     },
     "resultats": [
       {
@@ -275,50 +2310,50 @@
         "warmupSeconds": 150,
         "detected": true,
         "meanThroughput": {
-          "mean": 230.8571428571429,
-          "half": 21.435819604634865
+          "mean": 209.14285714285714,
+          "half": 42.5886549998222
         },
         "meanLostRatio": {
-          "mean": 2.69993939042647,
-          "half": 0.5130525337515327
+          "mean": 3.0660282125670446,
+          "half": 0.7204087856267505
         }
       },
       {
         "fleet": 100,
-        "warmupSeconds": 0,
+        "warmupSeconds": 550,
         "detected": true,
         "meanThroughput": {
-          "mean": 395,
-          "half": 30.121
+          "mean": 291.6923076923077,
+          "half": 75.78093016056216
         },
         "meanLostRatio": {
-          "mean": 9.750862063664933,
-          "half": 0.6839765172490195
+          "mean": 8.40397638292246,
+          "half": 1.7951631789120444
         }
       },
       {
         "fleet": 300,
-        "warmupSeconds": 450,
-        "detected": true,
+        "warmupSeconds": 600,
+        "detected": false,
         "meanThroughput": {
-          "mean": 476.8,
-          "half": 58.82375698576223
+          "mean": 524,
+          "half": 95.83236021303033
         },
         "meanLostRatio": {
-          "mean": 29.677879989380912,
-          "half": 2.069262892274683
+          "mean": 25.062772340794922,
+          "half": 2.399596550594137
         }
       }
     ]
   },
   "congestion": {
-    "tick": 1506,
+    "tick": 1511,
     "robots": 100,
-    "lostSteps": 124715,
-    "freeSteps": 11010,
-    "nonzero": 129,
-    "max": 1504,
-    "top": 984,
+    "lostSteps": 133132,
+    "freeSteps": 7585,
+    "nonzero": 128,
+    "max": 1510,
+    "top": 518,
     "layerY": 0.004,
     "top3d": [
       253,

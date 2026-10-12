@@ -11,6 +11,12 @@ comparer. Et, à terme, un instrument qui répond à une question précise :
 > À partir de combien de robots un entrepôt sature-t-il par congestion, et qu'est-ce qui
 > déplace ce seuil (architecture, structure du bâtiment, taille de flotte) ?
 
+Direction demandée le 11 octobre 2026 : un petit laboratoire ludique industriel.
+Entrée par un atelier et un aperçu du plan, espaces Concevoir/Simuler/Analyser,
+lancement explicite, inspection d’un robot au clic et courbes du run activables.
+Les instruments décrivent la simulation illustrative ; les campagnes avec
+réplications restent nécessaires pour comparer les configurations.
+
 On y va **étape par étape** (`docs/ROADMAP.md`). On commence petit : une scène fluide et
 juste vaut mieux qu'un logiciel complet qui marche à moitié.
 
@@ -39,8 +45,15 @@ Les trois familles d'entrepôts robotisés sont le **même modèle** :
 | AutoStore | sur la grille, au sommet | creusage vertical sur place | pile de bacs, dernier rangé premier sorti |
 
 **Un seul moteur, plusieurs profils et variantes.** On commence par Skypod nouvelle
-génération. La variante classique, avec circulation dans les allées, sera ajoutée
-plus tard pour comparer les générations, dans le même moteur.
+génération. La variante classique, avec circulation dans les allées, est disponible
+depuis l'étape 7c pour comparer les générations, dans le même moteur.
+
+L’étape 8 ajoute les profils Ascenseurs et AutoStore. Le 11 octobre 2026,
+l’utilisateur a confirmé le modèle illustratif configurable : robots partageant
+des ascenseurs entre étages ; robots au sommet avec creusage et restitution des
+piles AutoStore. Capacité fixe d’un robot par gaine, durée et placement configurables,
+puits temporaires privés et ports abstraits : hypothèses et limites dans
+`docs/PROFILES.md`. Ces simplifications ne sont pas une calibration industrielle.
 
 La décision du 2026-10-10 et les sources sont consignées dans `docs/SKYPOD.md`.
 La grille de cellules est une discrétisation de simulation, pas une maille industrielle

@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { analyzeFleet, interval, mser5, pareto, peak, replicationSeeds, runReplication, validateCampaign, WINDOW_STEPS, type FleetResult } from './campaign.ts'
 import { createSim, step } from './sim.ts'
-import { DEFAULT_LAYOUT, PRESETS } from './layout.ts'
+import { DEFAULT_LAYOUT, PRESETS, regularLayout } from './layout.ts'
 
 test('graines de réplication : déterministes, distinctes, 32 bits, propres à la graine de campagne', () => {
   const a = replicationSeeds(1, 30)
@@ -77,13 +77,14 @@ test('paramètres de campagne refusés', () => {
 test('base de normalisation : obligatoire pour comparer, vérifiée sur les plans', () => {
   const p = { fleets: [20], replications: 2, seconds: 3600, seed: 1 }
   assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: null }), /base de normalisation/)
-  // Démo et Compact : même emprise 48 × 32, capacités 128 et 320 emplacements.
+  // Démo et Compact : même emprise 48 × 32, capacités 256 et 768 emplacements.
   validateCampaign({ ...p, configurations: [demo, dense], base: 'footprint' })
-  assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: 'capacity' }), /Démo 128, Compact 320/)
+  assert.throws(() => validateCampaign({ ...p, configurations: [demo, dense], base: 'capacity' }), /Démo 256, Compact 768/)
   assert.throws(() => validateCampaign({ ...p, configurations: [demo, large], base: 'footprint' }), /Emprises différentes/)
   validateCampaign({ ...p, configurations: [demo, dense, large], base: 'pareto' })
   validateCampaign({ ...p, configurations: [demo, { name: 'Démo bis', layout: { ...DEFAULT_LAYOUT, fill: 50 } }], base: 'capacity' })
-  assert.throws(() => validateCampaign({ ...p, fleets: [300], configurations: [demo, dense], base: 'footprint' }), /^RangeError: (Démo|Compact) :/)
+  const small = { name: 'Petit', layout: regularLayout(16, 16, 1, 2, 1, 1) }
+  assert.throws(() => validateCampaign({ ...p, fleets: [100], configurations: [demo, small], base: 'pareto' }), /^RangeError: Petit :/)
 })
 
 test('front de Pareto et débit maximal mesuré', () => {

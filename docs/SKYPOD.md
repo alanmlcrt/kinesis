@@ -16,8 +16,8 @@ Décision de l'utilisateur du 2026-10-10 : représenter d'abord la nouvelle
 génération (2025+), avec circulation sous les racks. `SCOPE.md` et l'étape 3
 de `ROADMAP.md` ont été adaptés en conséquence.
 
-La génération classique sera ajoutée plus tard, à l'étape de comparaison,
-comme variante du même moteur. Le choix de génération est résolu ; la géométrie
+La génération classique est disponible depuis l'étape 7c, comme variante du même
+moteur. Le choix de génération est résolu ; la géométrie
 illustrative et les paramètres retenus pour l'étape 3 sont décrits ci-dessous.
 Les mécanismes des anciens brevets restent des éléments de
 compréhension, sans garantir les détails de fabrication du produit actuel.
@@ -100,13 +100,21 @@ affirmée en mètres. Les durées sont des choix illustratifs, sans calibration 
 | Chemins de grimpe | 32 chemins, un par travée ; le bac est à droite du robot dans cette implantation illustrative. |
 | Hauteur entre niveaux | 1,4 unité ; première tablette au-dessus de l'encombrement d'un robot chargé au sol. |
 | Robot | Enveloppe horizontale de 0,7 × 0,7 unité ; bac de 0,68 × 0,455 × 0,73 unité. Les enveloppes sont contrôlées sur les géométries rendues. |
-| Montants | Cases de support bloquées ; petits montants de guidage autour des chemins de grimpe, hors de l'enveloppe du robot et des passages voisins. |
+| Travée | 2 cellules (modèle du 11 octobre 2026), rangées continues sur toutes les lignes depuis le 12 octobre : accès de grimpe puis stockage à droite ; plus de case de montant bloquée. Montants de guidage aux coins des deux cellules, hors de l'enveloppe du robot. |
 | Stations | 4 baies au sol, plaque et rouleaux latéraux hors du passage des roues ; représentation illustrative. |
 | Temps | Pas fixe 0,1 s ; 5 pas par cellule, 10 pas par niveau, 5 pas d'engagement, 8 pas de prise/dépôt/service. |
 
 Le graphe remplace le circuit à sens unique de l'étape 2. Les lignes et colonnes
 impaires forment un réseau de circulation connecté ; les cases paires servent
-de baies de stationnement, de stations, de bases de grimpe ou de supports bloqués.
+de baies de stationnement, de stations ou de bases de grimpe.
+
+**Passage sous un robot en montée (12 octobre 2026, demande utilisateur)** : en 2025+,
+la base de grimpe se traverse au sol ; dès qu'un robot quitte le sol pour grimper, sa
+cellule au sol est libre et un autre robot peut passer dessous. Il ne redescend au sol
+que si la cellule est libre et hors de tout trajet engagé (attente comptée en temps
+perdu au niveau 1). Les trajets ne s'arrêtent jamais sur une base traversée. Une colonne
+reste à un seul robot ; la traverser en chemin ne la libère pas. En classique, la base
+reste terminale.
 Les lignes traversant les travées entre leurs montants permettent de passer
 sous les tablettes, y compris avec un bac chargé. Les emplacements de stock en
 hauteur sont distincts des cellules de circulation et ne sont pas traversables.
@@ -156,6 +164,31 @@ Les constantes d'encombrement et de hauteur sont partagées entre moteur, valida
 du plan et rendu dans `web/src/sim/geometry.ts`. Les tests vérifient les marges sous
 tablette, autour des guides et entre robots voisins, ainsi que le contact du bac
 porté avec son support. Ce contrôle interne ne constitue pas une calibration physique.
+
+## Variante classique — étape 7c
+
+Le plan porte une génération `classic` ou `2025+` ; l'absence de ce champ dans une
+ancienne sauvegarde signifie `2025+`. Le choix suit le plan dans la sauvegarde locale,
+la bibliothèque de configurations et le manifeste de campagne.
+
+**Hypothèse de Kinesis, sans calibration industrielle** : l'emprise d'une travée
+(2 cellules depuis le 11 octobre 2026, 3 × 2 avant) est interdite au sol en classique, sauf la case de base du chemin
+de grimpe en bord d'allée. Cette base est une baie terminale, jamais un raccourci.
+Le robot y entre par l'allée à gauche ; la case de stockage est bloquée, y compris
+les passages sous les tablettes qui restent disponibles en 2025+. Les transversales
+correspondent à des positions de travées laissées libres. Des plaques au sol en 3D et
+des surfaces pleines sur le plan signalent les cases bloquées ; elles ne représentent
+pas une reconstruction mécanique des racks classiques.
+
+Le même graphe sert à valider le plan et à router les robots. Toutes les colonnes,
+stations et baies doivent appartenir au réseau accessible sans traverser d'autre baie.
+Un plan invalide est refusé avant de remplacer le brouillon ou le run. La grille paire
+et les marges imposées aux racks limitent déjà fortement les implantations possibles.
+
+Stockage, grimpe, service, vitesses, graines, règles de réservation et protocole de
+mesure sont identiques entre les générations. À plan identique, capacité, emprise et
+sol libre sont identiques ; c'est le graphe de circulation qui change. La comparaison
+ne démontre donc pas les performances d'installations réelles ni de Deepsky.
 
 ## Sources
 

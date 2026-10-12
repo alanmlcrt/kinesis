@@ -3,11 +3,14 @@ import { footprint, PRESETS, storageSlots, validateLayout, type Layout } from '.
 import { BATCH, pareto, peak, validateCampaign, WINDOW_STEPS, type Base, type CampaignParams, type FleetResult, type Replication } from './sim/campaign.ts'
 import { DT } from './sim/sim.ts'
 import { loadPlans, savePlans, type NamedPlan } from './preferences.ts'
+import { Exploration } from './Exploration.tsx'
+import { DEFAULT_CONTROL } from './sim/control.ts'
 
 declare const __COMMIT__: string
-type Done = { params: CampaignParams; seeds: number[]; replications: Replication[]; results: FleetResult[]; date: string }
+type Timing = { configuration: number; fleet: number; seed: number; seconds: number }
+type Done = { params: CampaignParams; seeds: number[]; replications: Replication[]; results: FleetResult[]; date: string; timings?: Timing[] }
 
-const SOLVER = 'non validé (validation contre MAPF 3D, ICAPS 2024, prévue à l’étape 9)'
+const SOLVER = 'non validé scientifiquement ; contrôles MAPF 3D et limites dans docs/VALIDATION.md'
 const APPLIED = 'Plan appliqué'
 const BUILT_IN: NamedPlan[] = [
   { name: 'Démonstration · 4 rangées', layout: PRESETS.demo },
@@ -28,7 +31,7 @@ function summary(d: Done) {
   return d.params.configurations.map((c, i) => ({ name: c.name, slots: storageSlots(c.layout), area: footprint(c.layout), peak: peaks[i], front: front[i] }))
 }
 
-function manifest(d: Done) {
+export function manifest(d: Done) {
   return {
     format: 'kinesis-campagne-2', date: d.date, code: __COMMIT__, solveur: SOLVER,
     parametres: { ...d.params, dtSecondes: DT, fenetreObservationSecondes: WINDOW_STEPS * DT },
@@ -39,13 +42,20 @@ function manifest(d: Done) {
     },
     confiance: 'intervalle à 95 %, loi de Student, R − 1 degrés de liberté',
     baseNormalisation: baseText(d.params),
+    pilotage: d.params.configurations.some((c) => c.control) ? {
+      comparaison: 'Même plan, capacité et emprise identiques ; seules les réservations des trajets changent.',
+      operations: 'Totaux bruts, chauffe incluse : candidats voisins, insertions robot/pas et tests temporels de collision ; budget par recherche.',
+      tempsReel: 'Durée totale simulation + pilotage + collecte dans le Worker, chauffe incluse ; observation de ce lot sur cette machine, sans IC.',
+      dureesReplications: d.timings,
+    } : null,
     configurations: summary(d).map((s) => ({ nom: s.name, emplacements: s.slots, empriseCases: s.area,
       debitMaximalMesure: s.peak ? { flotte: s.peak.fleet, ...s.peak.meanThroughput } : null, ...(d.params.base === 'pareto' ? { surLeFront: s.front } : {}) })),
     definitions: {
       debit: 'bacs servis aux stations par heure simulée, après la chauffe',
       tempsPerdu: 'pas perdus / pas de trajet libre, après la chauffe (définition dans experiment-protocol)',
       debitMaximalMesure: 'plus haute moyenne parmi les flottes à chauffe détectée ; biaisée vers le haut, donnée avec l’intervalle de cette flotte',
-      emplacements: 'travées × niveaux', emprise: 'largeur × profondeur du sol, en cases',
+      emplacements: 'colonnes ou piles × niveaux ; puits temporaires AutoStore exclus', emprise: 'largeur × profondeur du sol, en cases, baies et puits inclus',
+      profils: 'Modèles illustratifs non calibrés (docs/PROFILES.md) : ascenseurs exclusifs réservés pendant le trajet, accès direct aux bacs ; AutoStore avec puits temporaire privé par robot, restitution de la pile initiale et ports abstraits au sommet.',
     },
   }
 }
@@ -109,13 +119,17 @@ function Chart({ done }: { done: Done }) {
 }
 
 export function Campaign({ layout, onClose }: { layout: Layout; onClose: () => void }) {
-  useLayoutEffect(() => { document.getElementById('campaign-title')?.focus() }, [])
+  const [exploring, setExploring] = useState(false)
+  useLayoutEffect(() => { if (!exploring) document.getElementById('campaign-title')?.focus() }, [exploring])
   const capacity = validateLayout(layout)
   const [saved, setSaved] = useState(loadPlans)
   const [notice, setNotice] = useState(saved.warning)
   const [name, setName] = useState('')
   const [selected, setSelected] = useState<string[]>([APPLIED])
   const [base, setBase] = useState<Base | null>(null)
+  const [compareControl, setCompareControl] = useState(false)
+  const [controlFields, setControlFields] = useState({ horizon: '8', budget: '100000' })
+  const [rolling, setRolling] = useState(false)
   const [fields, setFields] = useState({
     fleets: [10, 20, 50, 100, 150, 200, 300].filter((n) => n <= capacity).join(', '), replications: '10', seconds: '3600', seed: '1',
   })
@@ -143,7 +157,16 @@ export function Campaign({ layout, onClose }: { layout: Layout; onClose: () => v
   }
   const toggle = (n: string) => setSelected((s) => s.includes(n) ? s.filter((x) => x !== n) : [...s, n])
   const start = () => {
-    const configurations = library.filter((p) => selected.includes(p.name))
+    if (Object.values(fields).some((v) => !v.trim()) || compareControl && Object.values(controlFields).some((v) => !v.trim())) {
+      setError('Remplir tous les paramètres de la campagne et du pilotage.'); return
+    }
+    let configurations = library.filter((p) => selected.includes(p.name)) as CampaignParams['configurations']
+    if (compareControl) {
+      if (configurations.length !== 1) { setError('Choisir un seul plan pour comparer les deux méthodes de pilotage.'); return }
+      if (base !== 'capacity' && base !== 'footprint') { setError('Choisir capacité ou emprise égale pour ce même plan.'); return }
+      const plan = configurations[0].layout, control = { ...DEFAULT_CONTROL, horizon: Number(controlFields.horizon), budget: Number(controlFields.budget) }
+      configurations = [{ name: 'Trajet entier', layout: plan, control }, { name: rolling ? 'RHCR priorisé' : 'Fenêtre glissante', layout: plan, control: { ...control, method: rolling ? 'rhcr' : 'window' } }]
+    }
     const params: CampaignParams = { configurations, base: configurations.length > 1 ? base : null,
       fleets: fields.fleets.split(/[\s,;]+/).filter(Boolean).map(Number),
       replications: Number(fields.replications), seconds: Number(fields.seconds), seed: Number(fields.seed) }
@@ -154,7 +177,7 @@ export function Campaign({ layout, onClose }: { layout: Layout; onClose: () => v
     w.onmessage = (e) => {
       if (e.data.type === 'progress') setProgress({ done: e.data.done, total: e.data.total })
       else {
-        if (e.data.type === 'done') setDone({ params, seeds: e.data.seeds, replications: e.data.replications, results: e.data.results, date: new Date().toISOString() })
+        if (e.data.type === 'done') setDone({ params, seeds: e.data.seeds, replications: e.data.replications, results: e.data.results, timings: e.data.timings, date: new Date().toISOString() })
         else setError(e.data.message)
         w.terminate(); worker.current = null; setProgress(null)
       }
@@ -164,14 +187,16 @@ export function Campaign({ layout, onClose }: { layout: Layout; onClose: () => v
   }
   const field = (key: keyof typeof fields, label: string, help?: string) => <label>{label}
     <input name={key} value={fields[key]} inputMode={key === 'fleets' ? 'text' : 'numeric'} disabled={!!progress}
-      onChange={(e) => setFields({ ...fields, [key]: e.target.value })} />{help && <small>{help}</small>}</label>
+      onChange={(e) => { setFields({ ...fields, [key]: e.target.value }); setError('') }} />{help && <small>{help}</small>}</label>
   const R = done?.params.replications
   const rows = done ? summary(done) : []
+  if (exploring) return <Exploration layout={layout} onClose={onClose} onBack={() => setExploring(false)} campaignManifest={manifest} />
   return <section className="editor" aria-labelledby="campaign-title" onKeyDown={(e) => { if (e.key === 'Escape') { stop(); onClose() } }}>
     <header><div><h1 id="campaign-title" tabIndex={-1}>Mesurer et comparer</h1>
       <p>Même campagne pour chaque configuration : mêmes flottes, R, durée et graines.</p></div>
       <button onClick={() => { stop(); onClose() }}>Fermer</button></header>
     <div className="campaign-body">
+      <button onClick={() => { stop(); setExploring(true) }}>Explorer densité / débit</button>
       <fieldset disabled={!!progress}>
         <legend>Configurations (1 à 3)</legend>
         <ul className="plans">{library.map((p) => <li key={p.name}>
@@ -186,9 +211,18 @@ export function Campaign({ layout, onClose }: { layout: Layout; onClose: () => v
         </div>
         {notice && <p role="status" className="meta">{notice}</p>}
       </fieldset>
-      {selected.length > 1 && <fieldset disabled={!!progress}>
+      <fieldset disabled={!!progress}>
+        <legend>Pilotage des trajets</legend>
+        <label className="choice"><input type="checkbox" name="compare-control" checked={compareControl} onChange={(e) => setCompareControl(e.target.checked)} />Comparer trajet entier / fenêtre glissante</label>
+        {compareControl && <><p className="meta">Un seul plan identique pour les deux méthodes. Colonnes, tâches et tours de flotte conservés · solveur non validé.</p>
+          <label className="choice"><input type="checkbox" name="rhcr" checked={rolling} onChange={(e) => { setRolling(e.target.checked); setError('') }} />RHCR priorisé : replanifier au premier arrêt sûr</label>
+          <div className="field-grid">{(['horizon', 'budget'] as const).map((key) => <label key={key}>{key === 'horizon' ? 'Horizon (créneaux de 0,5 s)' : 'Budget (opérations / recherche)'}
+            <input name={`control-${key}`} inputMode="numeric" autoComplete="off" value={controlFields[key]} onChange={(e) => { setControlFields({ ...controlFields, [key]: e.target.value }); setError('') }} />
+            <small>{key === 'horizon' ? '2 à 32 ; préfixe renouvelé à son terme' : '100 à 1 000 000 ; aucune limite en temps réel'}</small></label>)}</div></>}
+      </fieldset>
+      {(selected.length > 1 || compareControl) && <fieldset disabled={!!progress}>
         <legend>Base de normalisation (obligatoire)</legend>
-        {(Object.keys(BASES) as Base[]).map((b) => <label key={b} className="choice">
+        {(Object.keys(BASES) as Base[]).filter((b) => !compareControl || b !== 'pareto').map((b) => <label key={b} className="choice">
           <input type="radio" name="base" checked={base === b} onChange={() => setBase(b)} />{BASES[b]}</label>)}
       </fieldset>}
       <div className="field-grid campaign-fields">
@@ -198,7 +232,7 @@ export function Campaign({ layout, onClose }: { layout: Layout; onClose: () => v
         {field('seed', 'Graine de campagne')}
       </div>
       <div className="tools">
-        {progress ? <button onClick={stop}>Annuler</button> : <button className="primary" onClick={start}>Lancer la campagne</button>}
+        <button className={progress ? '' : 'primary'} onClick={progress ? stop : start}>{progress ? 'Annuler' : 'Lancer la campagne'}</button>
         {done && !progress && <button onClick={() => download(done)}>Exporter (JSON + manifeste)</button>}
       </div>
       {progress && <p role="status"><progress value={progress.done} max={progress.total} /> {progress.done} / {progress.total} réplications · calcul hors affichage</p>}
@@ -227,6 +261,19 @@ export function Campaign({ layout, onClose }: { layout: Layout; onClose: () => v
             </> : <td colSpan={3} className="error">Chauffe non détectée : allonger la durée simulée.</td>}
           </tr>)}</tbody>
         </table></div>
+        {done.params.configurations.some((c) => c.control) && <>
+          <h2>Coût de calcul du pilotage</h2>
+          <p className="meta">Horizon : {done.params.configurations[1].control?.horizon} créneaux de 0,5 s · budget : {number(done.params.configurations[1].control?.budget ?? 0)} opérations par recherche, pour chaque méthode.</p>
+          <p className="meta">Totaux des R réplications, chauffe incluse. Temps réel : simulation + pilotage + collecte, observation de ce lot sur cette machine, sans IC. Un budget épuisé conserve un préfixe sûr ou attend ; aucun progrès garanti.</p>
+          <div className="table-scroll"><table><caption className="sr-only">Opérations reproductibles et durée réelle du calcul</caption>
+            <thead><tr><th scope="col">Méthode</th><th scope="col">Robots</th><th scope="col">Opérations</th><th scope="col">Recherches</th><th scope="col">Budgets épuisés</th><th scope="col">Temps réel (s)</th></tr></thead>
+            <tbody>{done.results.map((r) => {
+              const reps = done.replications.filter((v) => v.configuration === r.configuration && v.fleet === r.fleet)
+              const sum = (key: 'operations' | 'searches' | 'exhausted') => reps.reduce((n, v) => n + (v.controlStats?.[key] ?? 0), 0)
+              const seconds = (done.timings ?? []).filter((v) => v.configuration === r.configuration && v.fleet === r.fleet).reduce((n, v) => n + v.seconds, 0)
+              return <tr key={`${r.configuration}-${r.fleet}`}><th scope="row">{done.params.configurations[r.configuration].name}</th><td>{r.fleet}</td><td>{number(sum('operations'))}</td><td>{number(sum('searches'))}</td><td>{number(sum('exhausted'))}</td><td>{number(seconds, 3)}</td></tr>
+            })}</tbody></table></div>
+        </>}
       </>}
     </div>
   </section>

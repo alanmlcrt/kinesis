@@ -37,7 +37,7 @@ test('sauvegarde puis lecture : graine, flotte, plan et copies indépendantes', 
 
 test('sauvegardes invalides et lecture refusée : repli sans écrasement', (t) => {
   const { values, fake } = storage(t)
-  for (const data of ['{invalid', '{"version":2}', 'null', JSON.stringify({ version: 1, seed: 1, count: 300, layout: PRESETS.dense })]) {
+  for (const data of ['{invalid', '{"version":2}', 'null', JSON.stringify({ version: 1, seed: 1, count: 301, layout: PRESETS.dense })]) {
     values.set(CONFIGURATION_KEY, data)
     const result = loadConfiguration()
     assert.match(result.warning, /illisible/)

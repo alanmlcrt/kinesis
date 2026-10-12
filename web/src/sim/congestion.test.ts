@@ -33,14 +33,14 @@ for (const [name, blockHome] of [['attente sur place', true], ['repli par la bai
   })
 }
 
-test('cumul par case = total, positif, attentes au sol uniquement dans ce modèle', () => {
+test('cumul par case = total, positif, attentes au sol ou au premier niveau avant de redescendre', () => {
   for (const count of [1, 300]) {
     const s = createSim(1, count), cells = s.width * s.depth
     for (let i = 0; i < 4000; i++) step(s)
     assert.equal(s.lost.reduce((a, v) => a + v, 0), s.lostSteps)
     assert.ok(s.lost.every((v) => v >= 0))
-    // Les colonnes sont acquises avant la montée : aucune attente en hauteur.
-    assert.ok(s.lost.slice(cells).every((v) => v === 0))
+    // Colonnes acquises avant la montée ; seule attente en hauteur : niveau 1, sol occupé dessous.
+    assert.ok(s.lost.slice(2 * cells).every((v) => v === 0))
     assert.ok(s.freeSteps > 0)
     if (count === 1) assert.equal(s.lostSteps, 0)
     else assert.ok(s.lostSteps > 0, 'la flotte dense se gêne')

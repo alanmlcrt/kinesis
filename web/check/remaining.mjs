@@ -7,9 +7,12 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
   const report = { editor: [], speeds: [], stress: [], touch: [], browsers: [], camera: false }
   const open = () => page.getByRole('button', { name: 'Construire', exact: true }).click()
   const editor = page.locator('.editor')
-  const apply = () => editor.getByRole('button', { name: 'Appliquer et redémarrer' }).click()
-  const close = () => editor.getByRole('button', { name: 'Fermer', exact: true }).click()
+  const apply = () => editor.getByRole('button', { name: 'Appliquer le plan →' }).click()
+  // Quitter Concevoir sans appliquer abandonne le brouillon ; un clic sur une case utilise l'outil courant.
+  const close = () => page.locator('#tab-simulation').click()
+  const use = (x, z, target = editor) => target.locator(`[data-cell="${x},${z}"]`).click()
   const fields = async (values, target = editor) => {
+    if ('Rangées' in values && await target.locator('.regular-settings:not([open])').count()) await target.locator('.regular-settings summary').click()
     for (const [label, value] of Object.entries(values)) await target.getByLabel(label, { exact: true }).fill(String(value))
   }
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -17,7 +20,7 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
   for (const [label, invalid, valid] of [['Niveaux', '', 4], ['Remplissage (%)', 101, 100], ['Robots', 1.5, 20]]) {
     await fields({ [label]: invalid }); await apply()
     await editor.getByRole('alert').waitFor()
-    assert.equal(await page.evaluate(() => window.kinesis.sim.columns.length), 32)
+    assert.equal(await page.evaluate(() => window.kinesis.sim.columns.length), 64)
     await fields({ [label]: valid })
   }
   await close(); report.editor.push('champs vides/hors limite/fractionnaires refusés')
@@ -25,10 +28,9 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
   await open()
   const undo = editor.getByRole('button', { name: 'Annuler la modification', exact: true })
   assert.equal(await undo.isDisabled(), true)
-  await fields({ X: 0, Z: 0 })
   for (let i = 0; i < 55; i++) {
-    await editor.getByRole('button', { name: i % 2 === 0 ? 'Station' : 'Effacer', exact: true }).click()
-    await editor.getByRole('button', { name: 'Utiliser l’outil' }).click()
+    await editor.getByRole('button', { name: i % 2 === 0 ? 'Station' : 'Gomme', exact: true }).click()
+    await use(0, 0)
     assert.equal(await editor.locator('.plan-station').count(), i % 2 === 0 ? 5 : 4)
   }
   for (let i = 0; i < 50; i++) {
@@ -43,19 +45,18 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
   await fields({ 'Largeur (cellules)': 16, 'Profondeur (cellules)': 16, Rangées: 1,
     'Travées / rangée': 1, Stations: 1, Niveaux: 1, 'Remplissage (%)': 100, Robots: 1 })
   await editor.getByRole('button', { name: 'Générer le plan' }).click()
-  await editor.getByRole('button', { name: 'Effacer', exact: true }).click()
-  await fields({ X: 2, Z: 2 }); await editor.getByRole('button', { name: 'Utiliser l’outil' }).click()
-  await editor.getByRole('alert').filter({ hasText: '1 à 256' }).waitFor()
+  await editor.getByRole('button', { name: 'Gomme', exact: true }).click()
+  await use(2, 2)
+  await editor.getByRole('alert').filter({ hasText: '1 à 512' }).waitFor()
   assert.equal(await editor.locator('.plan-rack').count(), 1)
-  await fields({ X: 0, Z: 14 }); await editor.getByRole('button', { name: 'Utiliser l’outil' }).click()
+  await use(0, 14)
   await editor.getByRole('alert').filter({ hasText: '1 à 12' }).waitFor()
   assert.equal(await editor.locator('.plan-station').count(), 1)
   await editor.getByRole('button', { name: 'Station', exact: true }).click()
-  await fields({ X: 14, Z: 0 }); await editor.locator('svg.plan').focus()
-  await page.keyboard.press('ArrowRight')
-  assert.equal(await editor.getByLabel('X', { exact: true }).inputValue(), '14')
-  await page.keyboard.press('ArrowUp')
-  assert.equal(await editor.getByLabel('Z', { exact: true }).inputValue(), '0')
+  await editor.locator('svg.plan').focus()
+  for (let i = 0; i < 8; i++) await page.keyboard.press('ArrowRight')
+  for (let i = 0; i < 8; i++) await page.keyboard.press('ArrowUp')
+  await editor.locator('svg.plan[aria-label*="Emplacement x 14, z 0."]').waitFor()
   await page.keyboard.press('Space')
   assert.equal(await editor.locator('.plan-station').count(), 2)
   await close(); report.editor.push('dernier rack/station protégés, bornes du curseur et placement Espace')
@@ -71,16 +72,16 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
     assert.ok(Math.abs(sample.ticks - speed * sample.seconds / .1) <= 2, `vitesse ${speed}× : ${JSON.stringify(sample)}`)
     report.speeds.push({ speed, ...sample })
   }
-  await open(); await editor.getByLabel('Configuration prédéfinie').selectOption('dense')
+  await open(); await editor.locator(`[data-preset=\"${'dense'}\"]`).click()
   await fields({ Robots: 20 }); await apply()
-  await page.waitForFunction(() => window.kinesis.sim.columns.length === 80 && window.kinesis.sim.tick > 0)
-  assert.equal(await page.getByRole('button', { name: 'Pause', exact: true }).count(), 1)
-  await page.getByRole('button', { name: 'Pause', exact: true }).click()
-  await assertRenderedPlan(); report.editor.push('application pendant la lecture conserve la lecture')
+  await page.waitForFunction(() => window.kinesis.sim.columns.length === 192)
+  assert.equal(await page.evaluate(() => window.kinesis.sim.tick), 0)
+  assert.equal(await page.getByRole('button', { name: 'Lecture', exact: true }).count(), 1)
+  await assertRenderedPlan(); report.editor.push('passer par Concevoir met en pause ; plan appliqué prêt à lancer à t = 0')
 
   for (const [preset, count] of [['dense', 220], ['large', 300], ['maximum', 300]]) {
     await open()
-    if (preset !== 'maximum') await editor.getByLabel('Configuration prédéfinie').selectOption(preset)
+    if (preset !== 'maximum') await editor.locator(`[data-preset=\"${preset}\"]`).click()
     else {
       await fields({ 'Largeur (cellules)': 80, 'Profondeur (cellules)': 64, Rangées: 12,
         'Travées / rangée': 20, Stations: 12, Niveaux: 8, 'Remplissage (%)': 100 })
@@ -128,19 +129,18 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
       assert.ok(await panel.evaluate((element) => {
         const r = element.getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight
       }))
-      await panel.getByLabel('X', { exact: true }).fill('0'); await panel.getByLabel('Z', { exact: true }).fill('0')
       await panel.getByRole('button', { name: 'Station', exact: true }).tap()
-      await panel.getByRole('button', { name: 'Utiliser l’outil' }).tap()
+      await panel.locator('[data-cell="0,0"]').tap()
       assert.equal(await panel.locator('.plan-station').count(), 5)
       await mobile.screenshot({ path: fileURLToPath(new URL(`./touch-${viewport.width}x${viewport.height}.png`, import.meta.url)) })
-      await panel.getByRole('button', { name: 'Appliquer et redémarrer' }).tap()
+      await panel.getByRole('button', { name: 'Appliquer le plan →' }).tap()
       await mobile.waitForFunction(() => window.kinesis.sim.stations.length === 5)
       await mobile.reload(); await mobile.waitForFunction(() => window.kinesis?.sim.stations.length === 5)
       assert.equal(await mobile.getByRole('button', { name: 'Lecture', exact: true }).count(), 1)
       // Revenir au plan initial pour le prochain format d'écran.
       await mobile.getByRole('button', { name: 'Construire', exact: true }).tap()
-      await mobile.getByLabel('Configuration prédéfinie').selectOption('demo')
-      await mobile.getByRole('button', { name: 'Appliquer et redémarrer' }).tap()
+      await mobile.locator(`[data-preset=\"${'demo'}\"]`).click()
+      await mobile.getByRole('button', { name: 'Appliquer le plan →' }).tap()
       await mobile.waitForFunction(() => window.kinesis.sim.stations.length === 4)
       report.touch.push(viewport)
     }
@@ -167,7 +167,7 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
       assert.equal(await probe.evaluate(() => window.kinesis.sim.tick), tick)
       await probe.getByRole('button', { name: 'Construire', exact: true }).click()
       await fields({ Niveaux: 3, 'Remplissage (%)': 50, Robots: 2 }, probe.locator('.editor'))
-      await probe.getByRole('button', { name: 'Appliquer et redémarrer' }).click()
+      await probe.getByRole('button', { name: 'Appliquer le plan →' }).click()
       await probe.waitForFunction(() => window.kinesis.mesh.count === 2)
       await probe.reload(); await probe.waitForFunction(() => window.kinesis?.mesh.count === 2)
       assert.equal(await probe.evaluate(() => window.kinesis.sim.seed), 0xffffffff)

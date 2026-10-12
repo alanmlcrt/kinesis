@@ -1,6 +1,34 @@
-# Rendu 3D — contrôle du 10 octobre 2026
+# Rendu 3D — modèle et contrôles
+
+L’étape 8 ajoute des grilles d’étage et cadres de gaines pour Ascenseurs, ainsi
+qu’une grille au sommet et des piles compactes pour AutoStore. Les positions
+verticales viennent du moteur, y compris à l’initialisation et en pause. Les
+grilles AutoStore bordent les cellules pour laisser le puits d’extraction libre ;
+ce dégagement est contrôlé sur les matrices réelles des instances. Les ports
+et robots utilisent les assets communs, avec les simplifications explicites de
+`docs/PROFILES.md`. Captures ordinateur/mobile et changements répétés de profil
+sont contrôlés par `web/check/profiles.mjs` ; résultat final dans le journal.
 
 Amélioration de l'étape 3, puis consolidation du rendu et de l'éditeur de l'étape 5.
+
+## Direction claire — demande du 11 octobre 2026
+
+Le studio utilise désormais un fond gris très clair, un sol gris clair et une grille
+discrète. Les panneaux sont blancs, les textes foncés et l'accent bleu est réservé aux
+actions et sélections. Les commandes sont regroupées en lecture/vitesse, flotte et
+construction/mesure, avec des séparateurs légers. Aucun effet décoratif ni dépendance
+supplémentaire. La palette de la scène est définie dans `scene/assets.ts`, celle de
+l'interface et des fonds de coupe dans les variables CSS de `index.html`.
+
+Plans, champs, tableaux et coupes neutres suivent la direction claire ; la viridis des
+temps perdus et les formes des séries comparées sont conservées. `check/theme.mjs`
+contrôle les fonds effectivement appliqués dans Three.js et la coupe 2D, les groupes de
+commandes et les contrastes : texte normal ≥ 4,5:1, commandes et séries ≥ 3:1. Les
+captures ordinateur et mobile complètent ces contrôles ; un calcul de contraste seul
+ne suffit pas à vérifier le rendu. Le modèle de simulation est inchangé.
+
+Les vérifications décrites ci-dessous retracent les contrôles du 10 octobre ; les
+résultats du dernier passage sont consignés dans `JOURNAL.md` et `VERIFICATION.md`.
 
 ## Modèles et éclairage
 

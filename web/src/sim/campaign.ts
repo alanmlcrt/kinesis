@@ -1,16 +1,17 @@
 // Campagne de mesure (protocole : .agents/skills/experiment-protocol). TypeScript pur, exécuté dans un Worker.
 import { createSim, DT, step } from './sim.ts'
+import { validateControl, type Control, type ControlStats } from './control.ts'
 import { footprint, storageSlots, validateFleet, validateLayout, validateSeed, type Layout } from './layout.ts'
 
 export const WINDOW_STEPS = 100 // fenêtre d'observation : 10 s simulées
 export const BATCH = 5 // MSER-5 : moyennes de lots de 5 fenêtres
 
 export type Base = 'capacity' | 'footprint' | 'pareto'
-export type Configuration = { name: string; layout: Layout }
+export type Configuration = { name: string; layout: Layout; control?: Control }
 // base : choisie par l'utilisateur dès deux configurations, jamais par défaut ; null pour une seule.
 export type CampaignParams = { configurations: Configuration[]; base: Base | null; fleets: number[]; replications: number; seconds: number; seed: number }
 // Séries par fenêtre (incréments) : assez pour refaire tout le calcul depuis l'export.
-export type Replication = { configuration: number; fleet: number; seed: number; served: number[]; lost: number[]; free: number[] }
+export type Replication = { configuration: number; fleet: number; seed: number; served: number[]; lost: number[]; free: number[]; controlStats?: ControlStats }
 export type Interval = { mean: number; half: number }
 export type FleetResult = {
   configuration: number; fleet: number; warmupSeconds: number; detected: boolean
@@ -25,6 +26,7 @@ export function validateCampaign(p: CampaignParams): void {
   const names = configs.map((c) => typeof c.name === 'string' ? c.name.trim() : '')
   if (names.some((n) => !n || n.length > 40) || new Set(names).size !== names.length) throw new RangeError('Noms de configuration vides, trop longs ou en double.')
   const capacities = configs.map((c) => validateLayout(c.layout))
+  configs.forEach((c) => { if (c.control !== undefined) { validateControl(c.control); if (c.layout.profile === 'lifts' && c.control.method !== 'whole' && c.control.horizon * 5 < c.layout.liftSteps!) throw new RangeError('Horizon trop court pour une transition d’ascenseur.') } })
   validateSeed(p.seed)
   if (configs.length === 1 && p.base !== null) throw new RangeError('Une seule configuration : aucune base de normalisation.')
   if (configs.length > 1) {
@@ -62,8 +64,8 @@ export function replicationSeeds(seed: number, count: number): number[] {
   return seeds
 }
 
-export function runReplication(layout: Layout, fleet: number, seed: number, seconds: number, configuration = 0): Replication {
-  const s = createSim(seed, fleet, layout), out: Replication = { configuration, fleet, seed, served: [], lost: [], free: [] }
+export function runReplication(layout: Layout, fleet: number, seed: number, seconds: number, configuration = 0, control?: Control): Replication {
+  const s = createSim(seed, fleet, layout, control), out: Replication = { configuration, fleet, seed, served: [], lost: [], free: [] }
   const windows = Math.floor(seconds / (WINDOW_STEPS * DT))
   let served = 0, lost = 0, free = 0
   for (let w = 0; w < windows; w++) {
@@ -73,6 +75,7 @@ export function runReplication(layout: Layout, fleet: number, seed: number, seco
     out.served.push(total - served); out.lost.push(s.lostSteps - lost); out.free.push(s.freeSteps - free)
     served = total; lost = s.lostSteps; free = s.freeSteps
   }
+  if (control) out.controlStats = { ...s.controlStats }
   return out
 }
 

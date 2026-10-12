@@ -1,18 +1,19 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber'
 import { Grid, OrbitControls } from '@react-three/drei'
-import { Object3D, PMREMGenerator, type InstancedMesh, type PerspectiveCamera } from 'three'
+import { Object3D, PMREMGenerator, type Mesh, type InstancedMesh, type PerspectiveCamera } from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { type OrbitControls as OrbitControl } from 'three/addons/controls/OrbitControls.js'
 import { binParts, PALETTE, rackParts, robotParts, stationParts } from './scene/assets.ts'
-import { binPosition, createSim, DT, LEVEL_HEIGHT, robotPosition, step, type State } from './sim/sim.ts'
-import { validateLayout, type Layout } from './sim/layout.ts'
+import { binPosition, createSim, DT, LEVEL_HEIGHT, elevation, surfaceLevel, robotPosition, step, type State } from './sim/sim.ts'
+import { validateLayout, profileLabel, type Layout } from './sim/layout.ts'
 import { Editor } from './Editor.tsx'
 import { CongestionPanel, HeatLayer } from './Congestion.tsx'
 import { Campaign } from './Campaign.tsx'
 import { GEOMETRY } from './sim/geometry.ts'
 import { loadConfiguration, saveConfiguration } from './preferences.ts'
+import { LiveLab } from './Lab.tsx'
 
 const SPEEDS = [1, 2, 5, 10]
 const MAX_STEPS_PER_FRAME = 100 // au-delà (onglet en arrière-plan), on lâche le retard
@@ -24,16 +25,16 @@ declare global {
   }
 }
 // Lu par useFrame, écrit par les boutons : hors state React pour ne pas re-rendre à chaque image.
-const clock = { playing: !matchMedia('(prefers-reduced-motion: reduce)').matches, speed: 1, acc: 0 }
+const clock = { playing: location.hash === '#simulation' && !matchMedia('(prefers-reduced-motion: reduce)').matches, speed: 1, acc: 0 }
 
-function Robots({ sim }: { sim: State }) {
+function Robots({ sim, onSelect }: { sim: State; onSelect: (id: number) => void }) {
   const mesh = useRef<InstancedMesh>(null!)
   const bins = useRef<InstancedMesh>(null!)
   const bodies = useRef<InstancedMesh[]>([])
   const tubs = useRef<InstancedMesh[]>([])
   const buffers = useMemo(() => {
-    const prev = sim.robots.map((r) => ({ x: r.x, y: GEOMETRY.robotCenterY, z: r.z }))
-    const cur = sim.robots.map((r) => ({ x: r.x, y: GEOMETRY.robotCenterY, z: r.z }))
+    const prev = sim.robots.map((r) => { const p = { x: 0, y: 0, z: 0 }; robotPosition(sim, r, p); return p })
+    const cur = sim.robots.map((r) => { const p = { x: 0, y: 0, z: 0 }; robotPosition(sim, r, p); return p })
     const binPrev = sim.bins.map((b) => { const p = { x: 0, y: 0, z: 0 }; binPosition(sim, b, p); return p })
     const binCur = binPrev.map((p) => ({ ...p }))
     return { prev, cur, binPrev, binCur, transform: new Object3D() }
@@ -86,6 +87,7 @@ function Robots({ sim }: { sim: State }) {
     <>
     {robotParts.map((p, i) => <instancedMesh key={i} args={[p.geometry, p.material, sim.robots.length]}
       frustumCulled={false} castShadow={i === 0} receiveShadow
+      onClick={(event) => { if (event.instanceId !== undefined && event.delta < 5) { event.stopPropagation(); onSelect(event.instanceId) } }}
       ref={(m) => { bodies.current[i] = m!; if (i === 0) {
         mesh.current = m!
       } }} />)}
@@ -98,9 +100,23 @@ function Robots({ sim }: { sim: State }) {
   )
 }
 
+function Selection({ sim, selected }: { sim: State; selected: number | null }) {
+  const ring = useRef<Mesh>(null!)
+  const position = useMemo(() => ({ x: 0, y: 0, z: 0 }), [])
+  useFrame(() => {
+    ring.current.visible = selected !== null && !!sim.robots[selected]
+    if (selected === null || !sim.robots[selected]) return
+    robotPosition(sim, sim.robots[selected], position)
+    ring.current.position.set(position.x - sim.width / 2 + .5, position.y - GEOMETRY.robotCenterY + .025, position.z - sim.depth / 2 + .5)
+  })
+  return <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
+    <ringGeometry args={[.55, .68, 32]} /><meshBasicMaterial color={PALETTE.accent} depthWrite={false} />
+  </mesh>
+}
+
 type Placement = [number, number, number, number, number, number]
 
-function Structure({ placements, color, sim }: { placements: Placement[]; color: string; sim: State }) {
+function Structure({ placements, color, sim, name }: { placements: Placement[]; color: string; sim: State; name?: string }) {
   const mesh = useRef<InstancedMesh>(null!)
   useLayoutEffect(() => {
     const transform = new Object3D()
@@ -114,7 +130,7 @@ function Structure({ placements, color, sim }: { placements: Placement[]; color:
     mesh.current.instanceMatrix.needsUpdate = true
     mesh.current.computeBoundingSphere()
   }, [placements, sim])
-  return <instancedMesh ref={mesh} args={[undefined, undefined, placements.length]}>
+  return <instancedMesh name={name} ref={mesh} args={[undefined, undefined, placements.length]}>
     <boxGeometry args={[1, 1, 1]} />
     <meshStandardMaterial color={color} roughness={0.8} />
   </instancedMesh>
@@ -125,7 +141,7 @@ function StaticAsset({ parts, cells, sim, name }: { parts: typeof robotParts; ce
   useLayoutEffect(() => {
     const transform = new Object3D()
     for (let i = 0; i < cells.length; i++) {
-      transform.position.set(cells[i] % sim.width - sim.width / 2 + .5, 0,
+      transform.position.set(cells[i] % sim.width - sim.width / 2 + .5, elevation(sim, surfaceLevel(sim)),
         Math.floor(cells[i] / sim.width) - sim.depth / 2 + .5)
       transform.updateMatrix()
       for (const mesh of meshes.current) mesh.setMatrixAt(i, transform.matrix)
@@ -144,15 +160,36 @@ function Warehouse({ sim }: { sim: State }) {
   const structure = useMemo(() => {
     const parking: Placement[] = []
     for (const r of sim.robots) for (const dx of [-.40, .40]) {
-      parking.push([r.x + dx, .005, r.z, .018, .01, .78])
-      parking.push([r.x, .005, r.z + dx, .78, .01, .018])
+      parking.push([r.x + dx, elevation(sim, surfaceLevel(sim)) + .005, r.z, .018, .01, .78])
+      parking.push([r.x, elevation(sim, surfaceLevel(sim)) + .005, r.z + dx, .78, .01, .018])
     }
-    return { columns: sim.columns.map((c) => c.cell), parking }
+    const blocked: Placement[] = []
+    if (sim.layout.generation === 'classic') for (let c = 0; c < sim.floor.length; c++) if (sim.floor[c] === 'blocked') {
+      blocked.push([c % sim.width, .03, Math.floor(c / sim.width), 1, .06, 1])
+    }
+    const profile: Placement[] = []
+    if (sim.layout.profile === 'autostore') {
+      const h = elevation(sim, surfaceLevel(sim))
+      for (let x = 0; x < sim.width; x++) profile.push([x - .5, h - .02, (sim.depth - 1) / 2, .025, .04, sim.depth])
+      for (let z = 0; z < sim.depth; z++) profile.push([(sim.width - 1) / 2, h - .02, z - .5, sim.width, .04, .025])
+      for (const c of sim.columns) for (const dx of [-.43, .43]) for (const dz of [-.43, .43]) profile.push([c.cell % sim.width + dx, h / 2, Math.floor(c.cell / sim.width) + dz, .035, h, .035])
+    } else if (sim.layout.profile === 'lifts') {
+      const h = elevation(sim, sim.levels) + .6
+      for (const lift of sim.layout.lifts!) for (const dx of [-.44, .44]) for (const dz of [-.44, .44]) profile.push([lift.x + dx, h / 2, lift.z + dz, .06, h, .06])
+      for (let l = 1; l <= sim.levels; l++) {
+        const y = elevation(sim, l) - .04
+        for (let x = 0; x < sim.width; x++) profile.push([x, y, (sim.depth - 1) / 2, .025, .04, sim.depth])
+        for (let z = 0; z < sim.depth; z++) profile.push([(sim.width - 1) / 2, y, z, sim.width, .04, .025])
+      }
+    }
+    return { columns: sim.columns.map((c) => c.cell), parking, blocked, profile }
   }, [sim])
   return <>
-    <StaticAsset parts={rackAssets} cells={structure.columns} sim={sim} name="rack" />
+    {sim.layout.profile !== 'autostore' && <StaticAsset parts={rackAssets} cells={structure.columns} sim={sim} name="rack" />}
+    {structure.profile.length > 0 && <Structure placements={structure.profile} color={PALETTE.cell} sim={sim} name="profile-structure" />}
     <StaticAsset parts={stationParts} cells={sim.stations} sim={sim} name="station" />
     <Structure placements={structure.parking} color={PALETTE.section} sim={sim} />
+    {structure.blocked.length > 0 && <Structure placements={structure.blocked} color={PALETTE.rack} sim={sim} name="blocked-floor" />}
   </>
 }
 
@@ -182,7 +219,7 @@ function CameraFit({ sim }: { sim: State }) {
   const { camera, controls, size } = useThree()
   useLayoutEffect(() => {
     const cam = camera as PerspectiveCamera
-    const targetY = sim.levels * LEVEL_HEIGHT / 3
+    const targetY = elevation(sim, sim.layout.profile === 'autostore' ? surfaceLevel(sim) : sim.levels) / 3
     const radius = Math.hypot(sim.width / 2, sim.depth / 2, targetY)
     const halfFov = Math.min(cam.fov * Math.PI / 360, Math.atan(Math.tan(cam.fov * Math.PI / 360) * size.width / size.height))
     const distance = radius / Math.sin(halfFov) * .78
@@ -195,11 +232,12 @@ function CameraFit({ sim }: { sim: State }) {
   return null
 }
 
-function Controls({ count, onCount, sim, onEdit, onMeasure, error }: { count: number; onCount: (n: number) => void; sim: State; onEdit: () => void; onMeasure: () => void; error: string }) {
+function Controls({ count, onCount, sim, onEdit, onMeasure, onControl, error }: { count: number; onCount: (n: number) => void; sim: State; onEdit: () => void; onMeasure: () => void; onControl: (method: State['control']['method']) => void; error: string }) {
   const [playing, setPlaying] = useState(clock.playing)
   const [speed, setSpeed] = useState(clock.speed)
   return (
     <section className="panel" aria-label="Commandes de simulation">
+      <div className="control-group" role="group" aria-label="Lecture et vitesse">
       <button onClick={() => setPlaying((previous) => (clock.playing = !previous))}>{playing ? 'Pause' : 'Lecture'}</button>
       <div role="group" aria-label="Vitesse" className="seg">
         {SPEEDS.map((v) => (
@@ -208,20 +246,34 @@ function Controls({ count, onCount, sim, onEdit, onMeasure, error }: { count: nu
           </button>
         ))}
       </div>
+      </div>
+      <div className="control-group" role="group" aria-label="Flotte">
       <label htmlFor="fleet">Robots</label>
       <select id="fleet" name="fleet" value={count} onChange={(e) => onCount(Number(e.target.value))}>
         {Array.from(new Set([20, 100, 300, count])).sort((a, b) => a - b).map((n) =>
           <option key={n} value={n} disabled={n > validateLayout(sim.layout)}>{n}</option>)}
       </select>
       <span className="meta">graine {sim.seed}</span>
+        <span className="choice"><label htmlFor="live-control">Pilotage</label>
+        <select id="live-control" name="live-control" value={sim.control.method} onChange={(e) => onControl(e.target.value as State['control']['method'])}>
+          <option value="whole">Trajet entier</option><option value="window">Fenêtre</option><option value="rhcr">RHCR priorisé</option>
+        </select>
+        </span>
+        <span className="meta">redémarre</span>
+      </div>
+      <div className="control-group" role="group" aria-label="Entrepôt et mesures">
       <button id="open-editor" onClick={onEdit}>Construire</button>
       <button id="open-campaign" onClick={onMeasure}>Mesurer</button>
+      </div>
       {error && <p role="alert" className="error">{error}</p>}
       <details className="meta">
-        <summary>Skypod 2025+ · modèle illustratif</summary>
-        <p>{sim.levels} niveaux · {sim.columns.length} chemins de grimpe · {sim.bins.length} bacs · {sim.stations.length} stations.</p>
-        <p>Circulation sous racks. Baies d’attente et trajets réservés entièrement.</p>
-        <p>Un robot par colonne. Dimensions et durées non calibrées Exotec.</p>
+        <summary>{profileLabel(sim.layout)} · modèle illustratif</summary>
+        <p>{sim.levels} niveaux · {sim.columns.length} colonnes de stockage · {sim.bins.length} bacs · {sim.stations.length} stations.</p>
+        {(!sim.layout.profile || sim.layout.profile === 'skypod') && <>
+          <p>{sim.layout.generation === 'classic' ? 'Emprise des racks bloquée ; accès par les allées.' : 'Circulation sous racks.'} Baies d’attente · {sim.control.method === 'whole' ? 'trajets réservés entièrement' : sim.control.method === 'rhcr' ? 'replanification au premier arrêt sûr' : 'préfixes engagés'}.</p>
+          <p>Un robot par colonne. Dimensions et durées non calibrées Exotec.</p></>}
+        {sim.layout.profile === 'lifts' && <p>{sim.lifts.length} gaines · un robot par gaine · {sim.layout.liftSteps! * DT} s / niveau. Gaine réservée pendant le trajet ; accès direct aux bacs.</p>}
+        {sim.layout.profile === 'autostore' && <p>Robots au sommet, creusage par le dessus, puits temporaire privé, restitution de la pile. Ports abstraits, durées non calibrées.</p>}
       </details>
     </section>
   )
@@ -238,31 +290,61 @@ function App() {
   const sim = active.current
   const [count, setCount] = useState(initial.current.configuration.count)
   const [revision, setRevision] = useState(0)
-  const [editing, setEditing] = useState(false)
-  const [cut, setCut] = useState(0)
-  const [measuring, setMeasuring] = useState(false)
-  const closeCampaign = () => { setMeasuring(false); document.getElementById('open-campaign')?.focus() }
-  const level = Math.min(cut, sim.levels)
+  const [tab, setTab] = useState(['simulation', 'analyser'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'concevoir')
+  const [selected, setSelected] = useState<number | null>(null)
+  const navigate = (next: string) => {
+    setTab(next); location.hash = next
+    setMeasuring(next === 'analyser')
+    if (next !== 'simulation') clock.playing = false
+  }
+  useEffect(() => {
+    const changed = () => {
+      const requested = location.hash.slice(1)
+      const next = ['concevoir', 'simulation', 'analyser'].includes(requested) ? requested : 'concevoir'
+      setTab(next); setMeasuring(next === 'analyser')
+      if (next !== 'simulation') clock.playing = false
+    }
+    window.addEventListener('hashchange', changed)
+    return () => window.removeEventListener('hashchange', changed)
+  }, [])
+  const [cut, setCut] = useState(surfaceLevel(sim))
+  const [measuring, setMeasuring] = useState(location.hash === '#analyser')
+  const closeCampaign = () => {
+    setMeasuring(false)
+    if (tab === 'analyser') { navigate('simulation'); document.getElementById('tab-simulation')?.focus() }
+    else document.getElementById('open-campaign')?.focus()
+  }
+  const level = Math.min(cut, sim.levels + (sim.layout.profile === 'autostore' ? 1 : 0))
   const [error, setError] = useState(initial.current.warning)
-  const closeEditor = () => { setEditing(false); document.getElementById('open-editor')?.focus() }
-  const apply = (layout: Layout, n: number) => {
-    const next = createSim(sim.seed, n, layout)
+  const apply = (layout: Layout, n: number, method = sim.control.method) => {
+    const next = createSim(sim.seed, n, layout, { ...sim.control, method, horizon: Math.max(sim.control.horizon, (layout.liftSteps ?? 5) / 5) })
     active.current = next
+    setSelected(null)
     clock.acc = 0
     const warning = saveConfiguration({ version: 1, seed: next.seed, count: n, layout: next.layout })
-    setCount(n); setRevision((v) => v + 1); setError(warning)
-    // Le focus ne revient sur « Construire » que si l'éditeur était ouvert, pas depuis le choix de flotte.
-    if (editing) closeEditor()
+    setCut(surfaceLevel(next)); setCount(n); setRevision((v) => v + 1); setError(warning)
   }
   const changeCount = (n: number) => {
     try { apply(sim.layout, n) } catch (e) { setError((e as Error).message) }
   }
   return (
   <>
+    <header className="lab-header"><a className="lab-brand" href="#concevoir">KINESIS <span>warehouse lab</span></a>
+      <nav role="tablist" aria-label="Espaces du laboratoire">
+        {['concevoir', 'simulation', 'analyser'].map((name, i) => <button key={name} id={`tab-${name}`} role="tab" aria-selected={tab === name} aria-controls={`space-${name}`} tabIndex={tab === name ? 0 : -1}
+          onClick={() => navigate(name)} onKeyDown={(e) => {
+            const names = ['concevoir', 'simulation', 'analyser']
+            const index = e.key === 'ArrowRight' ? (i + 1) % 3 : e.key === 'ArrowLeft' ? (i + 2) % 3 : e.key === 'Home' ? 0 : e.key === 'End' ? 2 : -1
+            if (index >= 0) { e.preventDefault(); navigate(names[index]); document.getElementById(`tab-${names[index]}`)?.focus() }
+          }}>{['01 · Concevoir', '02 · Simuler', '03 · Analyser'][i]}</button>)}
+      </nav>
+    </header>
+    <div id="space-simulation" role="tabpanel" aria-labelledby="tab-simulation" className="simulation-space" style={{ visibility: tab === 'simulation' ? 'visible' : 'hidden' }}>
     <Canvas shadows camera={{ position: [31, 27, 33], fov: 45 }} dpr={[1, 2]}
       onCreated={(view) => { window.kinesisView = view }}>
+      <color attach="background" args={[PALETTE.background]} />
       <StudioLight sim={sim} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -.018, 0]} receiveShadow>
+      <mesh name="warehouse-floor" rotation={[-Math.PI / 2, 0, 0]} position={[0, -.018, 0]} receiveShadow>
         <planeGeometry args={[sim.width, sim.depth]} />
         <meshStandardMaterial color={PALETTE.floor} roughness={.87} metalness={.12} />
       </mesh>
@@ -279,17 +361,23 @@ function App() {
       {/* Un propriétaire unique pour remplacer toutes les instances du run. */}
       <group key={revision} name="warehouse">
         <Warehouse sim={sim} />
-        <Robots sim={sim} />
+        <Robots sim={sim} onSelect={setSelected} />
+        <Selection sim={sim} selected={selected} />
         <HeatLayer sim={sim} level={level} />
       </group>
       <OrbitControls makeDefault enableDamping target={[0, 2, 0]} maxPolarAngle={Math.PI / 2 - 0.05} />
       <CameraFit sim={sim} />
     </Canvas>
-    <CongestionPanel key={revision} sim={sim} level={level} onLevel={setCut} />
-    <Controls count={count} onCount={changeCount} sim={sim} onEdit={() => { setMeasuring(false); setEditing(true) }}
-      onMeasure={() => { setEditing(false); setMeasuring(true) }} error={error} />
+    <LiveLab key={`lab-${revision}`} sim={sim} selected={selected} onSelect={setSelected} />
+    <CongestionPanel key={`congestion-${revision}`} sim={sim} level={level} onLevel={setCut} />
+    <Controls key={tab} count={count} onCount={changeCount} sim={sim} onEdit={() => navigate('concevoir')}
+      onMeasure={() => setMeasuring(true)} onControl={(method) => apply(sim.layout, count, method)} error={error} />
+    </div>
+    {tab === 'concevoir' && <div id="space-concevoir" role="tabpanel" aria-labelledby="tab-concevoir">
+      <Editor key={revision} layout={sim.layout} count={count} onApply={(layout, n) => { apply(layout, n); navigate('simulation'); document.getElementById('tab-simulation')?.focus() }} />
+      {error && <p className="workshop-error error" role="alert">{error}</p>}</div>}
+    {tab === 'analyser' && <div id="space-analyser" role="tabpanel" aria-labelledby="tab-analyser" />}
     {measuring && <Campaign layout={sim.layout} onClose={closeCampaign} />}
-    {editing && <Editor layout={sim.layout} count={count} onApply={apply} onClose={closeEditor} />}
   </>
   )
 }

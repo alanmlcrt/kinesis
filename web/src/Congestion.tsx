@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { DataTexture, NearestFilter, SRGBColorSpace } from 'three'
-import { DT, LEVEL_HEIGHT, type State } from './sim/sim.ts'
+import { DT, elevation, type State } from './sim/sim.ts'
 
 // Échelle séquentielle viridis (perceptuellement uniforme, lisible par les daltoniens).
 export const VIRIDIS = ['#440154', '#472d7b', '#3b528b', '#2c728e', '#21918c', '#28ae80', '#5ec962', '#addc30', '#fde725']
@@ -42,7 +42,7 @@ export function HeatLayer({ sim, level }: { sim: State; level: number }) {
     }
     texture.needsUpdate = true
   })
-  return <mesh name="lost-time" rotation={[-Math.PI / 2, 0, 0]} position={[0, level * LEVEL_HEIGHT + .004, 0]} renderOrder={1}>
+  return <mesh name="lost-time" rotation={[-Math.PI / 2, 0, 0]} position={[0, elevation(sim, level) + .004, 0]} renderOrder={1}>
     <planeGeometry args={[sim.width, sim.depth]} />
     <meshBasicMaterial map={texture} transparent depthWrite={false} toneMapped={false} />
   </mesh>
@@ -61,6 +61,11 @@ export function CongestionPanel({ sim, level, onLevel }: { sim: State; level: nu
   useEffect(() => {
     const ctx = canvas.current.getContext('2d')!
     const image = ctx.createImageData(sim.width, sim.depth)
+    const styles = getComputedStyle(document.documentElement)
+    const neutral = Object.fromEntries(['ground', 'column', 'station', 'blocked'].map((kind) => {
+      const hex = styles.getPropertyValue(`--cut-${kind}`).trim()
+      return [kind, [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))]
+    }))
     const cells = sim.width * sim.depth
     const draw = () => {
       const max = maxLost(sim)
@@ -70,8 +75,8 @@ export function CongestionPanel({ sim, level, onLevel }: { sim: State; level: nu
         if (v > 0) { viridis(v / max, image.data, o); if (top === -1 || v > sim.lost[level * cells + top]) top = c }
         else {
           // Repères neutres : chemins de grimpe et stations, pour s'orienter sans valeur.
-          const kind = sim.floor[c], g = kind === 'column' ? 70 : kind === 'station' ? 110 : 22
-          image.data[o] = image.data[o + 1] = image.data[o + 2] = g
+          const kind = sim.floor[c + (sim.layout.profile === 'lifts' ? level * cells : 0)], rgb = neutral[kind === 'column' || kind === 'station' || kind === 'blocked' ? kind : 'ground']
+          for (let i = 0; i < 3; i++) image.data[o + i] = rgb[i]
         }
         image.data[o + 3] = 255
       }
@@ -81,7 +86,7 @@ export function CongestionPanel({ sim, level, onLevel }: { sim: State; level: nu
       live.current.textContent = `t = ${seconds(sim.tick)} s · débit ${hours ? Math.round(tasks / hours).toLocaleString('fr-FR') : 0} bacs/h ` +
         `(${tasks} servis) · temps perdu ${seconds(sim.lostSteps)} s, ${share} % du trajet libre`
       scale.current.textContent = `${seconds(max)} s`
-      peak.current.textContent = top === -1 ? `Aucun temps perdu à ce niveau${level ? ' : la colonne est réservée avant la montée.' : '.'}`
+      peak.current.textContent = top === -1 ? `Aucun temps perdu à ce niveau${level && (!sim.layout.profile || sim.layout.profile === 'skypod') ? ' : la colonne est réservée avant la montée.' : '.'}`
         : `Maximum : case (${top % sim.width}, ${Math.floor(top / sim.width)}), ${seconds(sim.lost[level * cells + top])} s`
       probe.current.textContent = cell.current === -1 ? 'Survoler la coupe pour lire une case.'
         : `Case (${cell.current % sim.width}, ${Math.floor(cell.current / sim.width)}) : ${seconds(sim.lost[level * cells + cell.current])} s`
@@ -102,12 +107,12 @@ export function CongestionPanel({ sim, level, onLevel }: { sim: State; level: nu
       <p className="meta">Un seul run · solveur non validé · chauffe incluse</p>
       <p ref={live} aria-live="off" />
       <div role="group" aria-label="Niveau de la coupe" className="seg">
-        {Array.from({ length: sim.levels + 1 }, (_, l) =>
-          <button key={l} aria-pressed={l === level} onClick={() => onLevel(l)}>{l === 0 ? 'Sol' : `N${l}`}</button>)}
+        {Array.from({ length: sim.levels + (sim.layout.profile === 'autostore' ? 2 : 1) }, (_, l) =>
+          <button key={l} aria-pressed={l === level} onClick={() => onLevel(l)}>{l === 0 ? 'Sol' : l === sim.levels + 1 ? 'Sommet' : `N${l}`}</button>)}
       </div>
-      <h2>Temps perdu, {level === 0 ? 'sol' : `niveau ${level}`}</h2>
+      <h2>Temps perdu, {level === 0 ? 'sol' : level === sim.levels + 1 ? 'sommet' : `niveau ${level}`} </h2>
       <canvas ref={canvas} width={sim.width} height={sim.depth} className="cut"
-        style={{ aspectRatio: `${sim.width} / ${sim.depth}` }} aria-label={`Coupe du temps perdu par case, ${level === 0 ? 'sol' : `niveau ${level}`}`}
+        style={{ aspectRatio: `${sim.width} / ${sim.depth}` }} aria-label={`Coupe du temps perdu par case, ${level === 0 ? 'sol' : level === sim.levels + 1 ? 'sommet' : `niveau ${level}`} `}
         role="img" onPointerMove={point} onPointerLeave={() => { cell.current = -1 }} />
       <div className="scale">
         <span>0 s</span>

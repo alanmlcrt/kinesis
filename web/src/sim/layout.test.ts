@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT_LAYOUT, editLayout, parseConfiguration, PRESETS, regularLayout, validateLayout, type Layout } from './layout.ts'
+import { DEFAULT_LAYOUT, editLayout, resizeLayout, withProfile, parseConfiguration, PRESETS, regularLayout, validateLayout, type Layout } from './layout.ts'
 import { GEOMETRY, LEVEL_HEIGHT } from './geometry.ts'
-import { createSim, step } from './sim.ts'
+import { createSim, step, onGround } from './sim.ts'
 
 test('plans prédéfinis et personnalisés : tailles, stockage et cycles sans collision', () => {
   for (const layout of [PRESETS.demo, PRESETS.dense, PRESETS.large, regularLayout(24, 20, 3, 4, 2, 2, 45)]) {
@@ -16,8 +16,7 @@ test('plans prédéfinis et personnalisés : tailles, stockage et cycles sans co
       const occupied = new Set<number>()
       for (const r of s.robots) {
         const cell = r.z * s.width + r.x
-        assert.ok(!occupied.has(cell)); occupied.add(cell)
-        assert.equal(s.occupied[cell], r.id)
+        if (onGround(s, r)) { assert.ok(!occupied.has(cell)); occupied.add(cell); assert.equal(s.occupied[cell], r.id) }
         assert.notEqual(s.floor[cell], 'blocked')
         assert.ok(r.level >= 0 && r.level <= layout.levels)
         if (r.level > 0) assert.equal(s.columns[r.column].cell, cell)
@@ -59,8 +58,7 @@ test('plans denses et limites : flotte maximale compatible, réservations et ver
       const occupied = new Set<number>()
       for (const r of s.robots) {
         const cell = r.z * s.width + r.x
-        assert.ok(!occupied.has(cell)); occupied.add(cell)
-        assert.equal(s.occupied[cell], r.id)
+        if (onGround(s, r)) { assert.ok(!occupied.has(cell)); occupied.add(cell); assert.equal(s.occupied[cell], r.id) }
         assert.notEqual(s.floor[cell], 'blocked')
         if (r.level > 0) assert.equal(s.columns[r.column].owner, r.id)
         if (r.pathIndex < r.pathLength) assert.equal(s.reserved[r.path[r.pathIndex]], r.id)
@@ -94,13 +92,14 @@ test('édition de travée/station et contrôle des chevauchements, bordures et c
   const initial = structuredClone(DEFAULT_LAYOUT)
   const added = editLayout(initial, 'rack', 2, 2)
   assert.equal(added.racks.length, initial.racks.length + 1)
-  assert.equal(initial.racks.length, 32)
-  assert.throws(() => editLayout(added, 'station', 4, 2), /chevauchent/)
-  assert.throws(() => editLayout(added, 'rack', 4, 2), /chevauchent/)
+  assert.equal(initial.racks.length, 64)
+  assert.throws(() => editLayout(added, 'station', 2, 2), /chevauchent/)
+  assert.throws(() => editLayout(added, 'rack', 2, 2), /chevauchent/)
+  assert.equal(editLayout(added, 'rack', 4, 2).racks.length, 66, 'travées adjacentes : accès et stockage sur une cellule chacun')
   assert.throws(() => editLayout(initial, 'rack', 46, 2), /hors/)
   assert.throws(() => editLayout(initial, 'station', 3, 2), /paires/)
   assert.throws(() => editLayout(initial, 'erase', 3, 2), /paires/)
-  const removed = editLayout(added, 'erase', 4, 2)
+  const removed = editLayout(added, 'erase', 2, 2)
   assert.deepEqual(removed, initial)
   const station = editLayout(initial, 'station', 0, 0)
   assert.equal(station.stations.length, 5)
@@ -111,4 +110,41 @@ test('édition de travée/station et contrôle des chevauchements, bordures et c
     assert.throws(() => validateLayout({ ...initial, ...patch } as Layout), RangeError)
   }
   assert.throws(() => regularLayout(16, 16, 8, 20, 4, 1), /trop petit/)
+})
+
+test('redimensionnement depuis la matrice : stations du bord suivies, stockage hors sol retiré', () => {
+  const wider = resizeLayout(DEFAULT_LAYOUT, 60, 40)
+  assert.deepEqual(wider.stations.map((p) => p.z), [36, 36, 36, 36])
+  assert.equal(wider.racks.length, DEFAULT_LAYOUT.racks.length)
+  const narrow = resizeLayout(DEFAULT_LAYOUT, 30, 32)
+  assert.ok(narrow.racks.every((p) => p.x <= 26) && narrow.racks.length === 48)
+  assert.equal(narrow.stations.length, 3)
+  assert.deepEqual(resizeLayout(wider, 48, 32), DEFAULT_LAYOUT)
+  assert.throws(() => resizeLayout(DEFAULT_LAYOUT, 47, 32), /paires/)
+  assert.throws(() => resizeLayout({ ...DEFAULT_LAYOUT, racks: [{ x: 36, z: 8 }] }, 16, 32), /1 à 512 travées/)
+})
+
+test('rangées continues : travées sur toutes les lignes, cycles complets et déterminisme dans les quatre architectures', () => {
+  const base = regularLayout(24, 20, 3, 12, 2, 2)
+  assert.deepEqual(base.racks.filter((p) => p.x === 2).map((p) => p.z), Array.from({ length: 12 }, (_, i) => 2 + i))
+  assert.equal(editLayout(editLayout(DEFAULT_LAYOUT, 'rack', 6, 24), 'rack', 6, 25).racks.length, 66, 'rangée prolongée sur une ligne paire puis impaire')
+  assert.throws(() => editLayout(DEFAULT_LAYOUT, 'rack', 6, 9), /chevauchent/)
+  assert.throws(() => editLayout(DEFAULT_LAYOUT, 'station', 4, 3), /paires/)
+  for (const plan of [base, { ...base, generation: 'classic' as const }, withProfile(base, 'lifts'), withProfile(base, 'autostore')]) {
+    const a = createSim(3, 6, plan), b = createSim(3, 6, plan)
+    for (let i = 0; i < 40000 && !a.robots.every((r) => r.returns >= 2); i++) step(a)
+    assert.ok(a.robots.every((r) => r.returns >= 2), `${plan.profile ?? plan.generation ?? 'skypod'} : cycles incomplets`)
+    for (let i = 0; i < a.tick; i++) step(b)
+    assert.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(a)))
+  }
+})
+
+test('2025+ : un robot au sol traverse l’accès pendant qu’un autre grimpe au-dessus ; classique non', () => {
+  const below = (s: ReturnType<typeof createSim>) => s.robots.some((a) => a.level > 0 && s.robots.some((b) => b.level === 0 && b.x === a.x && b.z === a.z))
+  const modern = createSim(5, 80, PRESETS.dense)
+  let seen = false
+  for (let i = 0; i < 20000 && !seen; i++) { step(modern); seen = below(modern) }
+  assert.ok(seen, 'aucun passage sous un robot en montée')
+  const classic = createSim(5, 80, { ...PRESETS.dense, generation: 'classic' })
+  for (let i = 0; i < 6000; i++) { step(classic); assert.equal(below(classic), false) }
 })

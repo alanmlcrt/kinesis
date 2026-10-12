@@ -10,9 +10,19 @@ s'efface.
 
 ## Principes
 
-- **La scène 3D occupe tout l'écran.** Les panneaux sont fins, superposés, repliables.
-- **Peu d'éléments, tous utiles.** Pas de décor : ni dégradés, ni halos, ni ombres
-  portées d'interface, ni icônes décoratives, ni animations d'apparat.
+- Parcours demandé le 11 octobre : **Concevoir → Simuler → Analyser**. Concevoir est un
+  **écran** (pas une modale) : matrice interactive au centre — peinture à la souris,
+  dimensions modifiées sur ses bords et par poignées —, réglages en cartes à droite ;
+  appliquer mène à Simuler en pause, lancement explicite ; la scène 3D remplit l’espace
+  Simuler sous la navigation. Les instruments restent superposés et repliables.
+- Côté ludique industriel : configuration tangible, sélection visible et retour
+  immédiat des instruments ; pas de score ni de résultat scientifique inventé.
+- **Peu d'éléments, tous utiles.** Pas de décor : ni dégradés, ni halos, ni icônes
+  décoratives, ni animations d'apparat.
+- **Arrondi et doux** (demande du 11 octobre) : rayons `--radius` (16 px, cartes et
+  panneaux), `--radius-s` (10 px, commandes), pastilles et onglets en `999px` ; une seule
+  ombre douce `--shadow` pour les cartes et panneaux flottants ; boutons secondaires sur
+  fond `--btn` sans bordure, champs bordés.
 - **Technique = précis et lisible** : unités toujours affichées, chiffres alignés,
   libellés courts et exacts.
 - **Honnêteté des mesures** : « un seul run », « solveur non validé » et la base de
@@ -20,8 +30,9 @@ s'efface.
 
 ## Couleurs
 
-- Fond sombre neutre, légèrement froid (`#0e1013`). Grille discrète (`#363c46` pour les
-  cellules, `#56606e` pour les sections).
+- Direction claire demandée par l'utilisateur le 11 octobre 2026 : fond gris clair
+  (`#f1f4f6`), panneaux blancs, sol gris légèrement plus soutenu (`#d5dde2`). Grille
+  discrète (`#aebbc5` pour les cellules, `#8597a5` pour les sections).
 - Gris neutres pour la structure (sol, racks, colonnes). La couleur est **réservée au
   sens** : état des robots, temps perdu, sélection.
 - **Une seule couleur d'accent**, pour la sélection et l'action principale.

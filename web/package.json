@@ -6,6 +6,7 @@
     "preview": "vite preview",
     "check": "node check/check.mjs",
     "test": "node --test \"src/sim/*.test.ts\" \"src/preferences.test.ts\"",
+    "benchmark": "node check/mapf3d.mjs",
     "verify": "node ../scripts/repo.mjs && npm test && npm run build && npm run check",
     "prepare": "node ../scripts/repo.mjs --setup"
   },

@@ -1,21 +1,48 @@
-# Construire son entrepôt — étape 5
+# Concevoir l’entrepôt — étape 5, refonte du 11 octobre 2026
 
-Depuis la scène, ouvrir **Construire**.
+**Concevoir** est un écran à part entière (plus de fenêtre modale) : la matrice du plan
+au centre, les réglages en cartes à droite, « Appliquer le plan → » en bas. L’app s’ouvre
+sur cet écran sans lancer le moteur. **Construire**, depuis Simuler, ramène ici. Quitter
+Concevoir sans appliquer abandonne le brouillon ; changer d’onglet met le run en pause.
+Appliquer remplace le plan, remet le run à zéro (graine conservée) et ouvre **Simuler**
+en pause à t = 0 : le lancement reste explicite (bouton Lecture).
 
-1. Choisir une configuration ou régler le sol, les rangées, les travées et les stations,
-   puis cliquer **Générer le plan**. Générer remplace le brouillon, pas le run courant.
-2. Modifier le plan : sélectionner **Travée**, **Station** ou **Effacer**, puis cliquer
-   un emplacement. Une travée associe une base de grimpe et un support à droite.
-   Effacer le support retire aussi la travée associée. **Annuler la modification**
-   restaure le plan précédent (les 50 dernières modifications du brouillon).
-3. Au clavier, sélectionner le plan, utiliser les flèches puis Entrée ou Espace.
-   Les champs X/Z et **Utiliser l'outil** permettent aussi un placement précis,
-   notamment sur petit écran. Les coordonnées sont des indices de cellules.
-4. Choisir les niveaux, le remplissage, le rangement initial et la flotte.
-5. **Appliquer et redémarrer** remplace le run et remet les robots/bacs à leur état
-   initial, avec la graine conservée. L'état lecture/pause est conservé. Fermer abandonne
-   le brouillon. Des réglages d'implantation modifiés doivent être générés avant application ;
-   ils ne sont pas ignorés silencieusement.
+## La matrice
+
+- Une case = une cellule du moteur. Les emplacements (coordonnées paires) sont blancs,
+  les voies de circulation (lignes/colonnes impaires) grisées.
+- **Travée = 2 cellules** : accès de grimpe **R** puis stockage à droite, une cellule
+  chacun (modèle changé le 11 octobre ; plus de cellule de montant). AutoStore : une
+  pile = une cellule. **Rangées continues** (12 octobre) : une travée peut occuper
+  chaque ligne ; stations et gaines restent sur les emplacements pairs.
+- Outils **Travée**, **Station**, (**Ascenseur**), **Gomme** : cliquer, ou **glisser
+  pour peindre** (un seul pas d’annulation par geste). Un fantôme indique la pose :
+  plein si elle est valide, pointillé rouge sinon.
+- **Dimensions sur la matrice** : champs Largeur/Profondeur avec −/+ (pas de 2) sur les
+  bords, et poignées à tirer (bord droit, bord bas, coin). Le sol change immédiatement
+  dans le brouillon (`resizeLayout`) : ce qui est au-delà du stockage (stations, gaines)
+  suit le bord, ce qui sort du sol est retiré ; une taille rendant le plan invalide est
+  refusée avec le motif. Pendant un geste, chaque taille est recalculée depuis le plan
+  de départ : agrandir de nouveau restaure ce qu’un rétrécissement avait retiré.
+- Clavier : sélectionner la matrice, flèches (pas de 2), Entrée ou Espace.
+- **Annuler la modification** : 50 derniers états du brouillon.
+
+## Les cartes
+
+- **Plans prêts** (en-tête) : Démonstration, Compact, Étendu, avec miniature.
+- **Architecture** : Skypod 2025+, Skypod classique, Ascenseurs, AutoStore (pastilles
+  radio, flèches au clavier) ; durée d’ascenseur par niveau pour Ascenseurs.
+- **Stockage et flotte** : niveaux, remplissage, rangement initial, robots (compteurs
+  −/+) ; jauge robots / baies de stationnement.
+- **Bilan du plan** : emplacements, sol libre, travées, stations (calculés par
+  `layoutMetrics`, donc identiques au moteur).
+- **Remplir automatiquement** : rangées × travées régulières sur le sol courant
+  (`regularLayout`), remplace le brouillon, annulable.
+- **Nom pour comparer** : ajoute le brouillon aux plans comparables (onglet Analyser).
+
+Le compositeur de « motif à répéter » (blocs, allées, transversales) a été retiré de
+l’éditeur à la demande de l’utilisateur ; `aisleLayout` reste utilisé par l’exploration
+densité/débit (7d).
 
 ## Sauvegarde locale
 
@@ -33,9 +60,11 @@ est refusé, le plan fonctionne dans la page et un avertissement signale l'éche
 
 | Configuration | Sol (cellules) | Rangées × travées | Niveaux | Emplacements de bacs | Stations |
 |---|---|---|---|---|---|
-| Démonstration | 48 × 32 | 4 × 8 | 4 | 128 | 4 |
-| Compact | 48 × 32 | 8 × 10 | 4 | 320 | 4 |
-| Étendu | 64 × 40 | 10 × 12 | 6 | 720 | 6 |
+| Démonstration | 48 × 32 | 4 × 16 | 4 | 256 | 4 |
+| Compact | 48 × 32 | 8 × 24 | 4 | 768 | 4 |
+| Étendu | 64 × 40 | 10 × 30 | 6 | 1 800 | 6 |
+
+Rangées continues depuis le 12 octobre 2026 (une travée par ligne).
 
 Les dimensions sont des unités de simulation, sans conversion en mètres validée.
 Ces configurations restent illustratives, sans certification d'implantation Exotec.
@@ -43,23 +72,72 @@ Ces configurations restent illustratives, sans certification d'implantation Exot
 ## Contraintes du modèle
 
 - Sol pair, largeur 16–80 cellules, profondeur 16–64 ; 1–8 niveaux.
-- 1–256 travées et 1–12 stations ; flotte de 1–300 robots, limitée par les baies libres.
-  Le plan Compact offre 220 baies : 300 robots y sont donc refusés.
-- Placement sur les emplacements pairs. Chevauchements, bordures incompatibles
+- 1–512 travées et 1–12 stations ; flotte de 1–300 robots, limitée par les baies libres
+  (Compact : 284 baies).
+- Travées sur toute ligne (rangées continues), colonne paire ; stations et gaines sur
+  les emplacements pairs. Chevauchements, bordures incompatibles
   et absence de rack/station sont refusés sans modifier le brouillon valide.
-- Les lignes et colonnes impaires restent disponibles pour la circulation ;
-  l'éditeur ne permet pas de dessiner des murs ou des obstacles arbitraires.
+- En 2025+, les lignes et colonnes impaires restent disponibles pour la circulation.
+  En classique, la cellule de stockage de chaque travée est bloquée au sol ; l’accès R
+  reste une baie terminale accessible par l’allée à gauche. Le plan est
+  contrôlé avec le graphe du moteur : colonnes, stations et baies accessibles par les voies.
+  L'éditeur ne permet pas de dessiner des murs ou des obstacles arbitraires.
 - Remplissage de 1–100 % : nombre de bacs arrondi vers le bas, avec au moins un bac.
   Rangement aléatoire déterministe, ou emplacements les plus proches des stations
   selon la distance de Manhattan au sol, puis les niveaux inférieurs.
   À 100 % les deux modes occupent tous les emplacements. Ce choix initialise
   le stockage ; les bacs retournent ensuite à leur emplacement d'origine.
 - Dimensions, ordonnancement conservateur, temps de prise et vitesses gardent les
-  limites décrites dans [SKYPOD.md](SKYPOD.md). Pas de mesure de congestion ajoutée.
+  limites décrites dans [SKYPOD.md](SKYPOD.md).
+
+## Exploration densité/débit (7d)
+
+Depuis **Mesurer → Explorer densité / débit**, choisir des listes de rangées par bloc
+et de largeurs d'allée, puis accepter la base **emprise au sol égale**. Le générateur
+conserve dimensions, niveaux, génération, remplissage, rangement et nombre de stations
+du plan appliqué ; stations sur un côté, allée devant les stations de deux cases,
+sans transversale. La scène et le plan appliqué ne sont pas remplacés.
+
+Quinze combinaisons au plus, plans identiques dédoublonnés, au moins deux plans distincts.
+Les mêmes flottes et graines servent à tous les plans ; une flotte incompatible est
+refusée avec le nom du plan. Deux Workers calculent les réplications en parallèle ;
+annulation, fermeture ou erreur terminent les calculs sans export partiel.
+
+Le front capacité/débit affiche des points numérotés, leurs IC 95 % et un tableau
+(capacité, sol libre, maximum mesuré et sa flotte, appartenance au front, seuil observé).
+Le seuil est la première flotte testée atteignant 95 % du maximum, avec au moins deux
+flottes plus grandes atteignant aussi ce niveau, chauffe détectée partout. Sinon il
+reste **non identifié**. Ce plateau descriptif ne prouve pas une congestion ; le front
+classe les moyennes sans test de significativité. Le maximum mesuré est biaisé vers le haut.
+
+L'export JSON contient le générateur, les plans complets, les graines, les séries brutes,
+la chauffe, les résultats, le front et le critère de seuil. Le protocole est défini dans
+`experiment-protocol`. Captures : `web/check/exploration.png` et `exploration-mobile.png`.
+
+## Comparer le pilotage (7e)
+
+Dans **Mesurer**, sélectionner un seul plan puis cocher **Comparer trajet entier /
+fenêtre glissante**. Choisir explicitement capacité ou emprise égale : le plan reste
+strictement identique, seule la réservation du sol change. L'horizon va de 2 à 32
+déplacements de 0,5 s ; le budget de 100 à 1 000 000 opérations par recherche est
+appliqué aux deux méthodes. Les flottes, graines, réplications, chauffe et IC sont communs.
+
+La fenêtre recherche des mouvements et attentes dans l'espace-temps ; son préfixe engagé
+est renouvelé à son terme. Les colonnes, baies, affectation des bacs et tours de flotte
+restent ceux du moteur. Le sommet final est tenu tant qu'un nouveau départ n'est pas
+planifié. Cette approche priorisée est conservatrice : elle peut se bloquer sur certaines
+implantations, sans garantie de progrès ; ce n'est pas un solveur RHCR validé.
+
+Le tableau de coût sépare les opérations reproductibles, recherches et budgets épuisés
+(totaux des R réplications, chauffe incluse) du temps réel du lot. Ce temps couvre
+simulation, pilotage et collecte dans le Worker, sur cette machine, sans IC ; il ne
+pilote jamais les décisions. Les paramètres, compteurs et durées individuelles sont
+dans l'export, avec les séries de débit/temps perdu et le manifeste existant.
+La scène affichée conserve son pilotage habituel ; la comparaison se calcule dans le Worker.
 
 ## Vérification
 
-25 tests Node couvrent notamment les configurations prédéfinies, un plan personnalisé,
+Les tests Node couvrent notamment les configurations prédéfinies, un plan personnalisé,
 les cycles sans collision, le déterminisme, le remplissage, la proximité des stations,
 l'isolation des brouillons, les chevauchements, les bordures et la capacité de flotte.
 Les plans denses et un plan de dimensions maximales sont exercés avec une flotte
@@ -71,6 +149,12 @@ du remplissage à 1 % et des graines aux bornes 0/4294967295. Ils contrôlent to
 tableaux d'occupation/réservation à chaque pas, l'adjacence des trajets, la continuité des
 positions et les identités des bacs. La reprise JSON est vérifiée dans les 16 phases du
 cycle, et l'ordre des équipements dans le plan ne change pas le run.
+
+La variante classique est exercée sur deux cycles par robot : plan dense à 72 robots,
+transversales avec stations sur deux côtés, stockage rare à huit niveaux. La sauvegarde,
+l'annulation du choix de génération, la concordance des cases bloquées et du rendu,
+la comparaison avec 2025+ et les ressources GPU lors des changements de génération
+sont contrôlées. Les dimensions hors limites sont refusées avant les boucles de génération.
 
 Le contrôle Playwright exerce les configurations, la génération, les erreurs,
 le placement/effacement au clavier et à la souris, une flotte de 17 robots,
@@ -96,3 +180,10 @@ experiment-protocol, ui-ux-design, web-accessibility et web-design-guidelines. A
 Les contrôles complétés sur la sauvegarde, l'historique de 50 modifications, les champs
 invalides, le tactile, les grandes flottes et les navigateurs sont décrits dans
 [VERIFICATION.md](VERIFICATION.md). Commande complète : `npm run verify` depuis `web/`.
+
+Le sélecteur **Pilotage** des commandes conserve cette interface et redémarre le
+run avec trajet entier, fenêtre engagée ou RHCR priorisé. Le choix reste dans la
+session, y compris après une édition ou un changement de flotte ; recharger la
+page rétablit le trajet entier. Dans **Mesurer**, cocher la comparaison puis
+« RHCR priorisé » permet de comparer avec le trajet entier, sur le même plan et
+le même protocole. Limites et statut de validation : [VALIDATION.md](VALIDATION.md).

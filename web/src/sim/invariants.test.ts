@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { regularLayout, validateLayout, type Layout } from './layout.ts'
-import { binPosition, createSim, robotPosition, step, type Phase, type State } from './sim.ts'
+import { aisleLayout, regularLayout, validateLayout, type Layout } from './layout.ts'
+import { binPosition, createSim, robotPosition, step, type Phase, type State, onGround } from './sim.ts'
 import { GEOMETRY } from './geometry.ts'
 
 // Vérifier les tableaux complets, pas seulement les cellules pointées par les robots.
@@ -13,9 +13,9 @@ function assertState(s: State): void {
     assert.ok(Number.isInteger(r.x) && r.x >= 0 && r.x < s.width)
     assert.ok(Number.isInteger(r.z) && r.z >= 0 && r.z < s.depth)
     assert.ok(Number.isInteger(r.level) && r.level >= 0 && r.level <= s.levels)
-    assert.equal(occupied[cell], -1, 'collision')
     assert.notEqual(s.floor[cell], 'blocked')
-    occupied[cell] = r.id
+    // Un robot en hauteur a libéré sa cellule au sol (passage dessous possible).
+    if (onGround(s, r)) { assert.equal(occupied[cell], -1, 'collision'); occupied[cell] = r.id }
     if (r.column !== -1) assert.equal(s.columns[r.column].owner, r.id)
     if (r.level > 0) assert.equal(s.columns[r.column].cell, cell, 'vertical hors colonne')
     let previous = cell
@@ -27,7 +27,7 @@ function assertState(s: State): void {
       assert.equal(reserved[next], -1, 'réservation double')
       assert.equal(s.occupied[next], -1, 'trajet occupé')
       assert.notEqual(s.floor[next], 'blocked')
-      if (i < r.pathLength - 1) assert.equal(s.floor[next], 'lane')
+      if (i < r.pathLength - 1) assert.ok(s.floor[next] === 'lane' || s.floor[next] === 'column' && s.layout.generation !== 'classic', 'transit hors voie')
       reserved[next] = r.id; previous = next
     }
   }
@@ -57,6 +57,9 @@ const cases = [
   { name: 'stock en bordure, huit niveaux, stations aux coins', seed: 0xffffffff, plan: edge, count: 12 },
   { name: 'stock rare près des stations', seed: 42, plan: regularLayout(24, 20, 4, 6, 3, 3, 1, 'near-station'), count: 40 },
   { name: 'stock partiel aléatoire', seed: 123456789, plan: regularLayout(32, 24, 5, 7, 2, 4, 37), count: 20 },
+  { name: 'classique dense, toutes les baies occupées', seed: 0, plan: aisleLayout({ width: 48, depth: 32, levels: 4, block: 12, aisle: 1, cross: 0, front: 0, stations: 4, sides: 1, fill: 100, storage: 'random', generation: 'classic' }), count: 72 },
+  { name: 'classique, transversales et deux côtés', seed: 0xffffffff, plan: aisleLayout({ width: 24, depth: 20, levels: 3, block: 2, aisle: 3, cross: 2, front: 2, stations: 3, sides: 2, fill: 37, storage: 'random', generation: 'classic' }), count: 20 },
+  { name: 'classique, huit niveaux et stock rare', seed: 42, plan: regularLayout(16, 16, 1, 1, 8, 1, 1, 'near-station', 'classic'), count: 12 },
 ]
 
 for (const { name, seed, plan, count } of cases) test(`invariants sur deux cycles : ${name}`, () => {
