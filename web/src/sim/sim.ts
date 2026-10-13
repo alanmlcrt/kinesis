@@ -8,6 +8,8 @@ export const STEPS_PER_CELL = 5
 export const STEPS_PER_LEVEL = 10
 export const HANDLING_STEPS = 8
 export const ENGAGEMENT_STEPS = 5
+export const LEAD = 3 // avance par défaut, voir Control.lead
+export const STATION_QUEUE = 2
 
 export type Phase = 'idle' | 'toRack' | 'engageTake' | 'upTake' | 'take' | 'downTake' |
   'bufferToStation' | 'toStation' | 'service' | 'bufferToReturn' | 'toReturn' |
@@ -136,6 +138,14 @@ function arrive(s: State, r: Robot): void {
 
 // Trajet voulu : un refus (ou un repli vers la baie) ouvre une attente comptée comme temps perdu.
 function want(s: State, r: Robot, ok: boolean): boolean { r.blocked ||= !ok; return ok }
+// File de station : au plus STATION_QUEUE robots servis ou en route vers une même station ; les
+// suivants attendent dans leur baie. Sans cette limite, la flotte s'entasse autour de la station
+// et le robot servi ne peut plus en sortir (blocage définitif constaté à 60 robots).
+const admitted = (s: State, r: Robot) => {
+  let n = 0
+  for (const o of s.robots) if (o !== r && o.station === r.station && (o.phase === 'service' || o.phase === 'toStation' && o.goal === o.station)) n++
+  return n < (s.control.stationQueue ?? STATION_QUEUE)
+}
 
 function finishCycle(s: State, r: Robot): void {
   if (s.layout.profile === 'autostore') {
@@ -247,8 +257,11 @@ export function step(s: State): void {
       if (++r.progress === HANDLING_STEPS) { r.visits++; phase(r, 'bufferToReturn') }
     } else if (s.tick % 10 === r.id % 10) {
       if (r.phase === 'idle') {
-        if (r.returns > round) continue // chaque robot finit son cycle avant de réaffecter les premiers
-        const bin = s.bins[(r.id + r.returns * 31) % s.bins.length]
+        // Anti-famine : au plus LEAD cycles d'avance sur le robot le plus lent (avant : 0, la flotte attendait le dernier).
+        if (r.returns > round + (s.control.lead ?? LEAD)) continue
+        // Premier bac libre parmi 8 candidats déterministes.
+        let bin = s.bins[(r.id + r.returns * 31) % s.bins.length]
+        for (let k = 1; k < 8 && (bin.reservedBy !== -1 || bin.carrier !== -1 || !lift && s.columns[bin.column].owner !== -1); k++) bin = s.bins[(r.id + r.returns * 31 + k * 17) % s.bins.length]
         const col = s.columns[bin.column]
         if (want(s, r, bin.reservedBy === -1 && bin.carrier === -1 && (lift || col.owner === -1) && route(s, r, stockNode(s, bin), 'toRack'))) {
           r.targetBin = bin.id
@@ -267,10 +280,10 @@ export function step(s: State): void {
         const col = s.columns[b!.column]
         const target = auto && r.dropBuffer ? r.home : stockNode(s, b!)
         if (want(s, r, (lift || col.owner === -1 || col.owner === r.id) && route(s, r, target, 'toReturn'))) { if (!lift) col.owner = r.id; r.column = b!.column }
-      } else if (r.phase === 'toStation') want(s, r, route(s, r, r.station, 'toStation'))
+      } else if (r.phase === 'toStation') want(s, r, admitted(s, r) && route(s, r, r.station, 'toStation'))
       else if (r.phase === 'bufferToStation') {
         // Libérer la colonne via le trajet direct ; la baie reste un repli si la station est indisponible.
-        if (!want(s, r, route(s, r, r.station, 'toStation'))) route(s, r, r.home, 'bufferToStation')
+        if (!want(s, r, admitted(s, r) && route(s, r, r.station, 'toStation'))) route(s, r, r.home, 'bufferToStation')
       } else if (r.phase === 'bufferToReturn') {
         const col = s.columns[b!.column]
         const target = auto && r.dropBuffer ? r.home : stockNode(s, b!)

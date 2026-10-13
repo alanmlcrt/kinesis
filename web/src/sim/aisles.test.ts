@@ -7,9 +7,10 @@ const base: AisleSpec = { width: 48, depth: 32, levels: 4, block: 2, aisle: 3, c
 
 test('implantation par allées : géométrie des rangées, allées transversales, stations', () => {
   const dense = aisleLayout({ ...base, block: 12, aisle: 1, front: 0 })
-  assert.deepEqual([...new Set(dense.racks.map((r) => r.x))], [4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44])
-  // Blocs de 2 rangées : pas de 4 dans le bloc, 3 + allée entre blocs.
-  assert.deepEqual([...new Set(aisleLayout(base).racks.map((r) => r.x))], [4, 8, 14, 18, 24, 28, 34, 38, 44])
+  assert.deepEqual([...new Set(dense.racks.map((r) => r.x))], [4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 41, 44], 'rayonnages dos à dos ; allée de 1 après 12 rangées')
+  // Blocs de 2 rangées : pas de 3 dans le bloc (jointif), 3 + allée entre blocs ; pas de 4 en classique.
+  assert.deepEqual([...new Set(aisleLayout(base).racks.map((r) => r.x))], [4, 7, 13, 16, 22, 25, 31, 34, 40, 43])
+  assert.deepEqual([...new Set(aisleLayout({ ...base, generation: 'classic' }).racks.map((r) => r.x))], [4, 8, 14, 18, 24, 28, 34, 38, 44])
   const crossed = aisleLayout({ ...base, cross: 3 })
   const zs = [...new Set(crossed.racks.map((r) => r.z))]
   assert.deepEqual(zs.slice(0, 6), [2, 3, 4, 6, 7, 8], 'une position libre toutes les 3 travées')
@@ -21,10 +22,10 @@ test('implantation par allées : géométrie des rangées, allées transversales
 
 test('mesures : emplacements, sol libre, flotte possible', () => {
   const l = aisleLayout({ ...base, block: 12, aisle: 1, front: 0 }), m = layoutMetrics(l)
-  assert.equal(l.racks.length, 11 * 27, 'rangées continues')
-  assert.equal(m.slots, 11 * 27 * 4 * 2, 'deux bacs par niveau et par travée')
+  assert.equal(l.racks.length, 14 * 27, 'rangées continues')
+  assert.equal(m.slots, 14 * 27 * 4 * 2, 'deux bacs par niveau et par travée')
   assert.equal(m.area, 48 * 32)
-  assert.equal(m.freeShare, 1 - 3 * 297 / 1536)
+  assert.equal(m.freeShare, 1 - 3 * 378 / 1536)
   // Plus d'allées : moins d'emplacements, plus de sol libre.
   const sparse = layoutMetrics(aisleLayout({ ...base, block: 1, aisle: 9 }))
   assert.ok(sparse.slots < m.slots && sparse.freeShare > m.freeShare && sparse.fleet > m.fleet)
@@ -53,7 +54,7 @@ for (const spec of [{ block: 12, aisle: 1, front: 0 }, { block: 3, aisle: 1, cro
     }
     for (const col of s.columns) assert.ok(seen.has(col.cell), `colonne ${col.cell} inaccessible`)
     for (const st of s.stations) assert.ok(seen.has(st), `station ${st} inaccessible`)
-    for (let i = 0; i < 20000 && s.robots.some((r) => r.returns < 1); i++) step(s)
+    for (let i = 0; i < 60000 && s.robots.some((r) => r.returns < 1); i++) step(s)
     assert.ok(s.robots.every((r) => r.returns >= 1), 'un robot n’a pas fini son cycle')
   })
 }

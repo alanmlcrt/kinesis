@@ -8,7 +8,7 @@ export async function checkControl({ page, measure }) {
   const wasPaused = await page.getByRole('button', { name: 'Lecture', exact: true }).count() === 1
   if (wasPaused) await page.getByRole('button', { name: 'Lecture', exact: true }).click()
   const dialog = page.locator('section[aria-labelledby="campaign-title"]')
-  const open = () => page.getByRole('button', { name: 'Mesurer', exact: true }).click()
+  const open = () => page.locator('#tab-analyser').click()
   await open()
   await dialog.getByRole('checkbox', { name: 'Comparer trajet entier / fenêtre glissante' }).check()
   const fill = async (fields) => { for (const [name, value] of Object.entries(fields)) await dialog.locator(`[name="${name}"]`).fill(value) }
@@ -41,7 +41,7 @@ export async function checkControl({ page, measure }) {
   await page.waitForFunction(() => Number(document.querySelector('[aria-labelledby="campaign-title"] progress')?.value) >= 4, null, { timeout: 60000 })
   assert.equal(live.size, 1)
   const during = await measure(.5)
-  assert.ok(during.totalMove > 0)
+  assert.ok(during.p95 < 100, 'interface gelée pendant le calcul') // Analyser met la scène en pause
   await dialog.getByRole('button', { name: 'Annuler', exact: true }).click()
   await stopped()
   assert.equal(await dialog.getByRole('button', { name: /Exporter/ }).count(), 0)
@@ -95,7 +95,7 @@ export async function checkControl({ page, measure }) {
   await show()
   await page.screenshot({ path: fileURLToPath(new URL('./control-mobile.png', import.meta.url)) })
   await page.keyboard.press('Escape')
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'open-campaign')
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'tab-simulation')
   await page.setViewportSize({ width: 1280, height: 800 })
   await open()
   await dialog.getByRole('checkbox', { name: 'Comparer trajet entier / fenêtre glissante' }).check()
@@ -106,9 +106,10 @@ export async function checkControl({ page, measure }) {
   assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Annuler')
   await page.keyboard.press('Escape')
   await stopped()
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'open-campaign')
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'tab-simulation')
   assert.equal(await page.evaluate(() => JSON.stringify(window.kinesis.sim.layout)), layout)
-  if (wasPaused) await page.getByRole('button', { name: 'Pause', exact: true }).click()
+  // Analyser met déjà la simulation en pause : restaurer l'état initial seulement si elle tourne.
+  if (wasPaused && await page.getByRole('button', { name: 'Pause', exact: true }).count()) await page.getByRole('button', { name: 'Pause', exact: true }).click()
   page.off('worker', track)
   console.log(`Pilotage vérifié : 8 réplications identiques à Node, budget/export/annulation/erreur/focus/mobile ; scène ${during.fps.toFixed(1)} images/s, p95 ${during.p95.toFixed(1)} ms`)
   return { during, params: p, results: data.resultats, operations: data.replications.map((r) => ({ configuration: r.configuration, fleet: r.fleet, seed: r.seed, ...r.controlStats })), timings }

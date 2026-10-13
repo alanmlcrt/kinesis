@@ -76,7 +76,7 @@ export async function checkClassic({ page, measure, assertRenderedPlan }) {
   const memory = () => page.evaluate(() => ({ ...window.kinesisView.gl.info.memory }))
   const classicMemory = await memory()
   assert.ok(await page.locator('.panel summary').textContent().then((s) => s.includes('classique')))
-  await page.getByRole('button', { name: 'Mesurer', exact: true }).click()
+  await page.locator('#tab-analyser').click()
   const dialog = page.locator('section[aria-labelledby="campaign-title"]')
   const box = (name) => dialog.getByRole('checkbox', { name, exact: true })
   await box('Plan appliqué').uncheck()

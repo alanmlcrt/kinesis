@@ -13,8 +13,10 @@ test('Famille à emprise égale, géométrie et capacité variables, deux géné
     assert.ok(plans.every((c) => c.layout.width === 24 && c.layout.depth === 20 && c.layout.generation === generation))
     assert.ok(plans[0].layout.racks.length > plans[1].layout.racks.length)
   }
-  const dedup = explorationPlans({ ...p, blocks: [1, 12], aisles: [1, 5] })
+  // En classique, un bloc de 12 à allée 1 (pas de 4) = blocs de 1 à allée 1 ; en 2025+ le bloc est jointif (pas de 3).
+  const dedup = explorationPlans({ ...p, spec: { ...p.spec, generation: 'classic' }, blocks: [1, 12], aisles: [1, 5] })
   assert.equal(dedup.length, 2, 'combinaisons identiques dédoublonnées')
+  assert.equal(explorationPlans({ ...p, blocks: [1, 12], aisles: [1, 5] }).length, 3, 'bloc jointif distinct en 2025+')
   assert.throws(() => explorationPlans({ ...p, blocks: [12] }), /deux plans distincts/)
 })
 

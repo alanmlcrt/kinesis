@@ -1,10 +1,18 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { editLayout, layoutMetrics, rackBounds, regularLayout, resizeLayout, TEMPLATES, templateLayout, validateLayout, profileLabel, withProfile, type Architecture, type Layout } from './sim/layout.ts'
 import { loadPlans, savePlans } from './preferences.ts'
+import type { Control } from './sim/control.ts'
 
 type Tool = 'rack' | 'station' | 'lift' | 'erase'
 type Mode = 'point' | 'line' | 'area'
 type Cell = { x: number; z: number }
+type Method = Control['method']
+// Pilotage des robots au sol ; détails et limites dans docs/VALIDATION.md.
+const METHODS: [Method, string, string][] = [
+  ['rhcr', 'RHCR priorisé', 'Par défaut. Recherche espace-temps par ordre de priorité, replanifiée au premier arrêt sûr (version simplifiée de la méthode MAPF). Le plus de robots en mouvement, mais le plus coûteux en calcul.'],
+  ['window', 'Fenêtre glissante', 'Réserve seulement les prochains déplacements, puis replanifie.'],
+  ['whole', 'Trajet entier', 'Chaque robot réserve tout son trajet avant de partir. Le plus prudent, mais les robots attendent beaucoup dès que la flotte grandit.'],
+]
 const ARCHITECTURES: [Architecture, string][] = [['skypod', 'Skypod 2025+'], ['classic', 'Skypod classique'], ['lifts', 'Ascenseurs'], ['autostore', 'AutoStore']]
 // Ce qu'il faut savoir d'une technologie pour la configurer ; hypothèses détaillées dans docs/SKYPOD.md et docs/PROFILES.md.
 const HOW: Record<Architecture, string> = {
@@ -37,7 +45,7 @@ function MiniPlan({ layout }: { layout: Layout }) {
   </svg>
 }
 
-export function Editor({ layout, count, onApply }: { layout: Layout; count: number; onApply: (layout: Layout, count: number) => void }) {
+export function Editor({ layout, count, method: initialMethod, onApply }: { layout: Layout; count: number; method: Method; onApply: (layout: Layout, count: number, method: Method) => void }) {
   useLayoutEffect(() => { document.getElementById('editor-title')?.focus({ preventScroll: true }) }, [])
   const [draft, setDraft] = useState(layout)
   const [history, setHistory] = useState<Layout[]>([])
@@ -53,6 +61,7 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
   const [tool, setTool] = useState<Tool>('rack')
   const [mode, setMode] = useState<Mode>('point')
   const [shape, setShape] = useState<{ tool: Tool; start: Cell; end: Cell } | null>(null)
+  const [method, setMethod] = useState(initialMethod)
   const [cursor, setCursor] = useState({ x: 2, z: 2 })
   const [hover, setHover] = useState<Cell | null>(null)
   const [frame, setFrame] = useState<{ w: number; d: number } | null>(null)
@@ -82,7 +91,7 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
   const snap = (t: Tool, p: Cell): Cell => {
     const l = current.current, b = rackBounds(l), even = (v: number) => Math.round((v - .5) / 2) * 2, clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
     if (t === 'erase') return { x: Math.floor(p.x), z: Math.floor(p.z) }
-    if (t === 'rack') return { x: clamp(l.profile === 'autostore' ? Math.floor(p.x) : even(p.x), b.x0, b.x1), z: clamp(Math.floor(p.z), b.z0, b.z1) }
+    if (t === 'rack') return { x: clamp(l.profile === 'autostore' || l.generation !== 'classic' ? Math.floor(p.x) : even(p.x), b.x0, b.x1), z: clamp(Math.floor(p.z), b.z0, b.z1) }
     return { x: clamp(even(p.x), 0, l.width - 2), z: clamp(even(p.z), 0, l.depth - 2) }
   }
   const items = (l: Layout) => l.racks.length + l.stations.length + (l.lifts?.length ?? 0)
@@ -167,8 +176,10 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     let xs: number[], zs: number[]
     if (t === 'rack' && l.profile !== 'autostore') {
       // Une travée occupe x − 1 à x + 1 : elle doit tenir dans la sélection (une colonne cliquée suffit en vertical).
-      const lo = Math.max(b.x0, up2(x0 === x1 ? snap('rack', { x: x0 + .5, z: 0 }).x : x0 + 1)), hi = Math.min(b.x1, x0 === x1 ? lo : Math.floor((x1 - 1) / 2) * 2)
-      const options = [seq(lo, hi, 4), seq(lo + 2, hi, 4)].filter((o) => o.length)
+      // Classique : allées paires à 4 cellules ; 2025+ : rayonnages jointifs, allées à 3 cellules.
+      const classic = l.generation === 'classic', pitch = classic ? 4 : 3, align = classic ? up2 : Math.ceil
+      const lo = Math.max(b.x0, align(x0 === x1 ? snap('rack', { x: x0 + .5, z: 0 }).x : x0 + 1)), hi = Math.min(b.x1, x0 === x1 ? lo : classic ? Math.floor((x1 - 1) / 2) * 2 : x1 - 1)
+      const options = (classic ? [0, 2] : [0, 1, 2]).map((d) => seq(lo + d, hi, pitch)).filter((o) => o.length)
       const gap = (o: number[]) => Math.abs((o[0] - 1 - x0) - (x1 - o[o.length - 1] - 1))
       xs = options.sort((a, c) => c.length - a.length || gap(a) - gap(c))[0] ?? []
       zs = seq(Math.max(b.z0, z0), Math.min(b.z1, z1), 1)
@@ -181,7 +192,7 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     if (g?.kind === 'paint') {
       const plan = current.current
       if (plan !== g.base) { setHistory((items) => [...items.slice(-49), g.base]); setNotice(`${g.done} ${g.tool === 'erase' ? 'retrait' : 'ajout'}${g.done > 1 ? 's' : ''}${g.skipped ? ` · ${g.skipped} position${g.skipped > 1 ? 's' : ''} sautée${g.skipped > 1 ? 's' : ''} (occupée ou hors règles)` : ''}. « Appliquer le plan » redémarre la simulation avec ce plan.`) }
-      else if (g.tool !== 'erase' && g.error) setError(g.error)
+      else if (g.error) setError(g.error) // trait sans effet : raison du refus (gomme comprise, ex. dernière travée)
     }
     // Sélection lue dans le geste, pas dans l'état React : un relâchement rapide arrive avant le rendu.
     if (g?.kind === 'shape') {
@@ -202,12 +213,12 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
     gesture.current = null; setFrame(null)
   }
   const key = (e: KeyboardEvent<SVGSVGElement>) => {
-    const dx = e.key === 'ArrowRight' ? 2 : e.key === 'ArrowLeft' ? -2 : 0
-    const row = tool === 'rack' || tool === 'erase' ? 1 : 2
+    const row = tool === 'rack' || tool === 'erase' ? 1 : 2, col = row === 1 && draft.generation !== 'classic' ? 1 : 2
+    const dx = e.key === 'ArrowRight' ? col : e.key === 'ArrowLeft' ? -col : 0
     const dz = e.key === 'ArrowDown' ? row : e.key === 'ArrowUp' ? -row : 0
     if (dx || dz) {
       e.preventDefault(); setCursor({ x: Math.max(0, Math.min(draft.width - 2, cursor.x + dx)), z: Math.max(0, Math.min(draft.depth - 2, (row === 2 ? cursor.z - cursor.z % 2 : cursor.z) + dz)) })
-    } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); use(cursor.x, cursor.z) }
+    } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); use(cursor.x - cursor.x % col, cursor.z - cursor.z % row) }
   }
   const ghost = hover
   // Fantôme : emprise de ce que l'outil poserait, ou de l'équipement que la gomme retirerait.
@@ -261,9 +272,10 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
       setError(''); setPlanName(''); setNotice(`Plan « ${name} » enregistré pour les comparaisons.`)
     } catch (e) { fail(e) }
   }
-  const apply = () => { try { const plan = finished(); validateLayout(plan); onApply(plan, Number(robots)) } catch (e) { fail(e) } }
+  const apply = () => { try { const plan = finished(); validateLayout(plan); onApply(plan, Number(robots), pilot) } catch (e) { fail(e) } }
   const metrics = (() => { try { return layoutMetrics({ ...draft, levels: Number(fields.levels) || 1 }) } catch { return null } })()
-  const autostore = draft.profile === 'autostore'
+  const autostore = draft.profile === 'autostore', classic = draft.generation === 'classic'
+  const pilot: Method = classic ? 'whole' : method
   const view = frame ?? { w: draft.width, d: draft.depth }
   const fleetShare = metrics ? Math.min(1, Number(robots) / Math.max(1, metrics.fleet)) : 0
 
@@ -334,7 +346,7 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
           <circle className="handle" data-handle="xz" cx={draft.width + 1} cy={draft.depth + 1} r=".9"><title>Étirer le sol</title></circle>
         </svg>
       </div>
-      <p id="plan-help" className="meta">Point : cliquer ou glisser pour peindre, la travée se centre sous le pointeur. Clic droit : gommer. Ligne : glisser, horizontale ou verticale. Zone : glisser un rectangle, rempli au mieux. Poignées pour étirer le sol ; au clavier : flèches puis Entrée. {autostore ? 'Une pile occupe une cellule.' : 'Une travée = allée de grimpe R entre deux rayonnages, un bac de chaque côté par niveau ; deux allées voisines sont à 4 cellules (rayonnages dos à dos).'}</p>
+      <p id="plan-help" className="meta">Point : cliquer ou glisser pour peindre, la travée se centre sous le pointeur. Clic droit : gommer. Ligne : glisser, horizontale ou verticale. Zone : glisser un rectangle, rempli au mieux. Poignées pour étirer le sol ; au clavier : flèches puis Entrée. {autostore ? 'Une pile occupe une cellule.' : `Une travée = allée de grimpe R entre deux rayonnages, un bac de chaque côté par niveau ; ${classic ? 'deux allées voisines à 4 cellules (cellule pleine entre les rayonnages)' : 'rayonnages voisins dos à dos, sans case vide'}.`}</p>
       <span className="sr-only" role="status">Emplacement x {cursor.x}, z {cursor.z}.</span>
     </div>
 
@@ -360,6 +372,10 @@ export function Editor({ layout, count, onApply }: { layout: Layout; count: numb
         <Stepper id="edit-robots" label="Robots" value={robots} min={1} max={300} onChange={setRobots} />
         {metrics && <div className="gauge" aria-hidden="true"><span style={{ width: `${fleetShare * 100}%` }} className={Number(robots) > metrics.fleet ? 'over' : ''} /></div>}
         {metrics && <p className="meta">{robots || 0} robots pour {metrics.fleet} baies de stationnement au plus.</p>}
+      </div>
+      <div className="card">
+        <Pills name="method" legend="Pilotage des robots (recherche de chemin)" value={pilot} options={METHODS.filter(([v]) => !classic || v === 'whole').map(([v, text]) => [v, text])} onChange={setMethod} />
+        <p className="meta how">{classic ? 'Skypod classique : fenêtre et RHCR se bloquent sur ces plans (0 cycle mesuré, docs/VALIDATION.md) ; seul le trajet entier est proposé.' : METHODS.find(([v]) => v === pilot)![2]}</p>
       </div>
       {metrics && <dl className="card tiles">
         <div><dt>Emplacements</dt><dd>{metrics.slots}</dd></div>

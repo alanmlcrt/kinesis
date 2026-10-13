@@ -10,7 +10,7 @@ export async function checkExploration({ page, measure }) {
   if (wasPaused) await page.getByRole('button', { name: 'Lecture', exact: true }).click()
   const dialog = page.locator('section[aria-labelledby="exploration-title"]')
   const open = async () => {
-    await page.getByRole('button', { name: 'Mesurer', exact: true }).click()
+    await page.locator('#tab-analyser').click()
     await page.getByRole('button', { name: 'Explorer densité / débit', exact: true }).click()
     assert.equal(await page.evaluate(() => document.activeElement.id), 'exploration-title')
   }
@@ -33,7 +33,8 @@ export async function checkExploration({ page, measure }) {
   await dialog.getByRole('alert').filter({ hasText: 'Remplir tous' }).waitFor()
   await fill({ seed: '3' })
   await dialog.getByRole('button', { name: 'Vérifier les plans', exact: true }).click()
-  await dialog.getByRole('status').filter({ hasText: '5 plans valides' }).waitFor()
+  // 2025+ : bloc de 2 à allée 1 jointif (pas de 3), distinct du bloc de 1 ; 6 plans.
+  await dialog.getByRole('status').filter({ hasText: '6 plans valides' }).waitFor()
   await page.screenshot({ path: fileURLToPath(new URL('./exploration-settings.png', import.meta.url)) })
   const live = new Set(), created = []
   const track = (w) => { if (w.url().includes('exploration.worker')) { live.add(w); created.push(w); w.on('close', () => live.delete(w)) } }
@@ -49,7 +50,8 @@ export async function checkExploration({ page, measure }) {
   await page.waitForFunction(() => Number(document.querySelector('[aria-labelledby="exploration-title"] progress')?.value) > 0, null, { timeout: 60000 })
   assert.equal(live.size, 2, 'deux Workers réellement actifs')
   const during = await measure(.5)
-  assert.ok(during.totalMove > 0, 'scène figée pendant le calcul parallèle')
+  // Analyser met la scène en pause : on vérifie que l'interface ne gèle pas pendant le calcul.
+  assert.ok(during.p95 < 100, 'interface gelée pendant le calcul parallèle')
   await dialog.getByRole('button', { name: 'Annuler', exact: true }).click()
   await waitStopped()
   assert.equal(await dialog.getByRole('button', { name: /Exporter/ }).count(), 0)
@@ -96,7 +98,7 @@ export async function checkExploration({ page, measure }) {
   await dialog.getByRole('button', { name: 'Retour aux campagnes', exact: true }).click()
   assert.equal(await page.evaluate(() => document.activeElement.id), 'campaign-title')
   await page.keyboard.press('Escape')
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'open-campaign')
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'tab-simulation')
   await open()
   await dialog.getByRole('checkbox', { name: 'Comparer à emprise au sol égale' }).check()
   await start()
@@ -106,7 +108,8 @@ export async function checkExploration({ page, measure }) {
   await waitStopped()
   assert.equal(await page.evaluate(() => JSON.stringify(window.kinesis.sim.layout)), active, 'exploration modifie la scène')
   await page.setViewportSize({ width: 1280, height: 800 })
-  if (wasPaused) await page.getByRole('button', { name: 'Pause', exact: true }).click()
+  // Analyser met déjà la simulation en pause : restaurer l'état initial seulement si elle tourne.
+  if (wasPaused && await page.getByRole('button', { name: 'Pause', exact: true }).count()) await page.getByRole('button', { name: 'Pause', exact: true }).click()
   page.off('worker', track)
   console.log(`Exploration vérifiée : deux Workers, annulation/erreur/fermeture, reprise, base/flotte refusées, export Node identique, Pareto/seuil, mobile ; calcul p95 ${during.p95.toFixed(1)} ms`)
   return { during, workersCreated: created.length, plans: analysis.rows.map((r) => ({ name: r.name, slots: r.slots, front: r.front, saturation: r.saturation })), replications: data.replications.length }

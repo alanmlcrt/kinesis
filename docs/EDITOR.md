@@ -12,18 +12,20 @@ en pause à t = 0 : le lancement reste explicite (bouton Lecture).
 - Une case = une cellule du moteur. Les emplacements (coordonnées paires) sont blancs,
   les voies de circulation (lignes/colonnes impaires) grisées.
 - **Travée = rayonnage | allée de grimpe R | rayonnage** (12 octobre, brevet Exotec,
-  voir `docs/SKYPOD.md`) : un bac de chaque côté par niveau ; deux allées voisines à
-  4 cellules au moins. Rangées continues sur toutes les lignes. AutoStore : une pile =
+  voir `docs/SKYPOD.md`) : un bac de chaque côté par niveau. En 2025+ (et ascenseurs),
+  une travée se pose sur toute colonne : rayonnages voisins dos à dos, allées à 3 cellules,
+  sans case vide ; sous un rayonnage on circule mais on ne stationne pas. En classique,
+  allées à 4 cellules au moins (cellule pleine entre deux rayonnages). Rangées continues sur toutes les lignes. AutoStore : une pile =
   une cellule, grille pleine possible. Stations et gaines sur les emplacements pairs.
 - **Tracé** : *Point* (clic ou glisser-peindre), *Ligne* (glisser : horizontale ou
-  verticale selon le geste ; travées au pas de 4 en largeur, de 1 en profondeur) et
+  verticale selon le geste ; travées au pas de 3 en largeur en 2025+ (rayonnages jointifs), de 4 en classique, de 1 en profondeur) et
   *Zone* (rectangle rempli). En ligne/zone, les travées doivent tenir dans la
-  sélection et sont calées (pas de 4) pour équilibrer les marges : une zone tirée
+  sélection et sont calées pour équilibrer les marges : une zone tirée
   jusqu’au bord droit pose la dernière allée en x = largeur − 4. Les positions
   impossibles sont ignorées et comptées ; un seul pas d'annulation par geste.
 - Outils **Travée**, **Station**, (**Ascenseur**), **Gomme** : cliquer, ou **glisser
   pour peindre** (un seul pas d’annulation par geste). La travée se centre sous le
-  pointeur (allée sur la colonne paire la plus proche, ramenée dans la zone permise) ;
+  pointeur (en classique sur la colonne paire la plus proche ; ramenée dans la zone permise) ;
   un trait rapide traite toutes les positions traversées. **Clic droit** = gomme le
   temps du geste, quel que soit l’outil. La gomme retire l’équipement qui couvre la
   cellule (rayonnage compris). Un fantôme indique la pose ou le retrait : plein si
@@ -201,9 +203,11 @@ Les contrôles complétés sur la sauvegarde, l'historique de 50 modifications, 
 invalides, le tactile, les grandes flottes et les navigateurs sont décrits dans
 [VERIFICATION.md](VERIFICATION.md). Commande complète : `npm run verify` depuis `web/`.
 
-Le sélecteur **Pilotage** des commandes conserve cette interface et redémarre le
-run avec trajet entier, fenêtre engagée ou RHCR priorisé. Le choix reste dans la
-session, y compris après une édition ou un changement de flotte ; recharger la
-page rétablit le trajet entier. Dans **Mesurer**, cocher la comparaison puis
+Le **pilotage des robots** se choisit dans Concevoir (carte « Pilotage des robots »,
+12 octobre) : RHCR priorisé par défaut, fenêtre glissante ou trajet entier, avec une
+phrase d'explication ; il s'applique avec le plan et est sauvegardé avec la configuration.
+En classique, seul le trajet entier est proposé (fenêtre et RHCR s'y bloquent, 0 cycle
+mesuré). Simuler n'a plus de sélecteur Pilotage ni de bouton Mesurer : les mesures sont
+dans l'onglet Analyser. Dans **Analyser**, cocher la comparaison puis
 « RHCR priorisé » permet de comparer avec le trajet entier, sur le même plan et
 le même protocole. Limites et statut de validation : [VALIDATION.md](VALIDATION.md).

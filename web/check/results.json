@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-12T13:36:14.326Z",
+  "date": "2026-10-12T21:30:45.301Z",
   "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x000046A6) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "viewport": {
     "width": 1280,
@@ -12,48 +12,48 @@
   "results": [
     {
       "frames": 300,
-      "fps": 60.001200024000475,
-      "p95": 16.799999999999272,
+      "fps": 60.00240009600384,
+      "p95": 16.800000000000182,
       "max": 16.800000000000182,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.03760051727294922,
-      "totalMove": 33.045977779078825,
-      "binMove": 8.170819997787476,
-      "meanDt": 16.666333333333334,
+      "maxMove": 0.05480003356933594,
+      "totalMove": 139.04495507110772,
+      "binMove": 17.038300335407257,
+      "meanDt": 16.666,
       "drawCalls": 21,
       "triangles": 636926
     },
     {
-      "frames": 300,
-      "fps": 60.00120002400049,
-      "p95": 16.799999999999272,
+      "frames": 301,
+      "fps": 60.001993421708356,
+      "p95": 16.700000000000728,
       "max": 16.80000000000109,
       "robot": true,
       "count": 100,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.039200782775878906,
-      "totalMove": 60.923691814959625,
-      "binMove": 3.951139271259308,
-      "meanDt": 16.66633333333333,
+      "maxMove": 0.05180025100708008,
+      "totalMove": 210.6091308415293,
+      "binMove": 28.38605958223343,
+      "meanDt": 16.666112956810633,
       "drawCalls": 21,
       "triangles": 846686
     },
     {
       "frames": 300,
       "fps": 60.00240009600385,
-      "p95": 16.700000000000728,
+      "p95": 16.799999999999272,
       "max": 16.80000000000291,
       "robot": true,
       "count": 300,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.042000770568847656,
-      "totalMove": 167.93007312917078,
-      "binMove": 19.248019695281982,
+      "maxMove": 0.055800437927246094,
+      "totalMove": 420.3864545993127,
+      "binMove": 23.70929914712906,
       "meanDt": 16.665999999999997,
       "drawCalls": 21,
       "triangles": 1371086
@@ -62,43 +62,43 @@
   "layouts": [
     {
       "preset": "skypod-dense",
-      "columns": 275,
+      "columns": 350,
       "levels": 4,
       "stations": 4,
-      "frames": 239,
-      "fps": 47.80191207648303,
+      "frames": 187,
+      "fps": 37.40224413464807,
       "p95": 33.400000000001455,
-      "max": 33.400000000001455,
-      "robot": true,
-      "count": 20,
-      "instanced": true,
-      "still": 0,
-      "maxMove": 0.06180000305175781,
-      "totalMove": 33.8088108731002,
-      "binMove": 8.412699699401855,
-      "meanDt": 20.91966527196654,
-      "drawCalls": 21,
-      "triangles": 2551118
-    },
-    {
-      "preset": "skypod-balanced",
-      "columns": 403,
-      "levels": 6,
-      "stations": 4,
-      "frames": 147,
-      "fps": 29.400588011760227,
-      "p95": 49.900000000001455,
       "max": 50,
       "robot": true,
       "count": 20,
       "instanced": true,
       "still": 0,
-      "maxMove": 0.08139991760253906,
-      "totalMove": 25.439432416655855,
-      "binMove": 8.44089961051941,
-      "meanDt": 34.01292517006804,
+      "maxMove": 0.08260059356689453,
+      "totalMove": 139.66523615896546,
+      "binMove": 27.00003033876419,
+      "meanDt": 26.73636363636364,
       "drawCalls": 21,
-      "triangles": 5130894
+      "triangles": 3231518
+    },
+    {
+      "preset": "skypod-balanced",
+      "columns": 496,
+      "levels": 6,
+      "stations": 4,
+      "frames": 102,
+      "fps": 20.400816032641323,
+      "p95": 66.69999999999709,
+      "max": 99.89999999999418,
+      "robot": true,
+      "count": 20,
+      "instanced": true,
+      "still": 0,
+      "maxMove": 0.20480060577392578,
+      "totalMove": 103.03244497957739,
+      "binMove": 9.117800116539001,
+      "meanDt": 49.017647058823485,
+      "drawCalls": 21,
+      "triangles": 6301950
     }
   ],
   "geometry": {
@@ -133,76 +133,76 @@
       {
         "speed": 1,
         "ticks": 5,
-        "seconds": 0.5043000000715255
+        "seconds": 0.5128999999761581
       },
       {
         "speed": 2,
         "ticks": 10,
-        "seconds": 0.5048999999761581
+        "seconds": 0.5022999999523163
       },
       {
         "speed": 5,
         "ticks": 25,
-        "seconds": 0.5062000000476837
+        "seconds": 0.5152999999523162
       },
       {
         "speed": 10,
         "ticks": 50,
-        "seconds": 0.5088000000715256
+        "seconds": 0.505
       }
     ],
     "stress": [
       {
         "preset": "skypod-dense",
-        "bins": 2200,
-        "frames": 222,
-        "fps": 44.40177607104282,
+        "bins": 2800,
+        "frames": 191,
+        "fps": 38.07511362730245,
         "p95": 33.400000000001455,
-        "max": 33.5,
+        "max": 49.900000000001455,
+        "robot": true,
+        "count": 100,
+        "instanced": true,
+        "still": 0,
+        "maxMove": 0.09619998931884766,
+        "totalMove": 33.701986660275196,
+        "binMove": 8.336659669876099,
+        "meanDt": 26.263874345549738,
+        "drawCalls": 21,
+        "triangles": 3441278
+      },
+      {
+        "preset": "skypod-balanced",
+        "bins": 5952,
+        "frames": 106,
+        "fps": 21.060578967236882,
+        "p95": 66.70000000000073,
+        "max": 66.70000000000073,
         "robot": true,
         "count": 220,
         "instanced": true,
         "still": 0,
-        "maxMove": 0.053000450134277344,
-        "totalMove": 123.17597562011467,
-        "binMove": 24.89426040649414,
-        "meanDt": 22.521621621621634,
+        "maxMove": 0.12800025939941406,
+        "totalMove": 179.4592303782954,
+        "binMove": 36.017348647117615,
+        "meanDt": 47.48207547169813,
         "drawCalls": 21,
-        "triangles": 3075518
+        "triangles": 6826350
       },
       {
-        "preset": "skypod-balanced",
-        "bins": 4836,
-        "frames": 131,
-        "fps": 26.201572094325677,
-        "p95": 50.099999999998545,
+        "preset": "maximum",
+        "bins": 3840,
+        "frames": 145,
+        "fps": 29.09835243121752,
+        "p95": 50,
         "max": 50.10000000000582,
         "robot": true,
         "count": 300,
         "instanced": true,
         "still": 0,
-        "maxMove": 0.08700013160705566,
-        "totalMove": 92.7174901031547,
-        "binMove": 2.399999976158142,
-        "meanDt": 38.16564885496181,
-        "drawCalls": 21,
-        "triangles": 5865054
-      },
-      {
-        "preset": "maximum",
-        "bins": 3840,
-        "frames": 169,
-        "fps": 33.801352054082145,
-        "p95": 33.400000000001455,
-        "max": 33.5,
-        "robot": true,
-        "count": 300,
-        "instanced": true,
-        "still": 0,
-        "maxMove": 0.07019996643066406,
-        "totalMove": 43.8943423816271,
-        "binMove": 9.400999426841736,
-        "meanDt": 29.5846153846154,
+        "maxMove": 0.10260009765625,
+        "totalMove": 47.82398877549894,
+        "binMove": 3.8000000715255737,
+        "meanDt": 34.36620689655172,
         "drawCalls": 21,
         "triangles": 4665102
       }
@@ -240,18 +240,18 @@
     "camera": true
   },
   "classic": {
-    "frames": 260,
-    "fps": 52.002080083203325,
-    "p95": 33.399999999999636,
-    "max": 33.5,
+    "frames": 262,
+    "fps": 52.402096083843354,
+    "p95": 33.30000000000018,
+    "max": 33.400000000001455,
     "robot": true,
     "count": 72,
     "instanced": true,
     "still": 0,
-    "maxMove": 0.04580116271972656,
-    "totalMove": 30.961018054954152,
-    "binMove": 11.63429981470108,
-    "meanDt": 19.23,
+    "maxMove": 0.06420040130615234,
+    "totalMove": 28.988312539240983,
+    "binMove": 10.451459646224976,
+    "meanDt": 19.08320610687023,
     "drawCalls": 22,
     "triangles": 2240462,
     "marked": 550,
@@ -365,31 +365,34 @@
   },
   "lab": {
     "stats": {
-      "mean": 101.7,
-      "served": 5,
-      "time": 102.10000000000001
+      "mean": 33.2,
+      "served": 3,
+      "time": 33.800000000000004
     },
     "frames": {
-      "fps": 60.4274870141423,
-      "p95": 16.799999999999272,
-      "max": 16.80000000000291
+      "fps": 60.62413038869928,
+      "p95": 16.700000000000728,
+      "max": 16.80000000000109
     },
     "errors": []
+  },
+  "brush": {
+    "hoverMs": 39.4
   },
   "exploration": {
     "during": {
       "frames": 30,
-      "fps": 59.99999999999999,
-      "p95": 16.799999999999727,
-      "max": 16.800000000000182,
+      "fps": 60.007921045578016,
+      "p95": 16.700000000000273,
+      "max": 16.799999999999727,
       "robot": true,
       "count": 20,
       "instanced": true,
-      "still": 0,
-      "maxMove": 0.0355987548828125,
-      "totalMove": 0.9972000122070312,
+      "still": 30,
+      "maxMove": 0,
+      "totalMove": 0,
       "binMove": 0,
-      "meanDt": 16.666666666666668,
+      "meanDt": 16.664466666666666,
       "drawCalls": 21,
       "triangles": 636926
     },
@@ -414,6 +417,12 @@
         "saturation": null
       },
       {
+        "name": "Bloc 2 · allée 1",
+        "slots": 2400,
+        "front": true,
+        "saturation": null
+      },
+      {
         "name": "Bloc 2 · allée 5",
         "slots": 1600,
         "front": false,
@@ -426,22 +435,22 @@
         "saturation": null
       }
     ],
-    "replications": 30
+    "replications": 36
   },
   "control": {
     "during": {
       "frames": 30,
-      "fps": 59.99999999999999,
-      "p95": 16.799999999999272,
-      "max": 16.799999999999272,
+      "fps": 60.01200240048014,
+      "p95": 16.700000000000728,
+      "max": 16.700000000000728,
       "robot": true,
       "count": 20,
       "instanced": true,
-      "still": 0,
-      "maxMove": 0.03800010681152344,
-      "totalMove": 2.3961314880018207,
-      "binMove": 0.6679990291595459,
-      "meanDt": 16.666666666666668,
+      "still": 30,
+      "maxMove": 0,
+      "totalMove": 0,
+      "binMove": 0,
+      "meanDt": 16.66333333333332,
       "drawCalls": 21,
       "triangles": 636926
     },
@@ -1045,79 +1054,79 @@
       {
         "configuration": 0,
         "fleet": 2,
-        "warmupSeconds": 100,
+        "warmupSeconds": 50,
         "detected": true,
         "replicationWarmupSeconds": [
-          0,
-          100
+          50,
+          0
         ],
         "throughput": [
-          51.42857142857142,
-          102.85714285714285
+          91.2,
+          129.6
         ],
         "lostRatio": [
-          0.726649528706084,
-          0.4031128404669261
+          0.16091954022988506,
+          0.07058823529411765
         ],
         "meanThroughput": {
-          "mean": 77.14285714285714,
-          "half": 326.7257142857142
+          "mean": 110.4,
+          "half": 243.95519999999993
         },
         "meanLostRatio": {
-          "mean": 0.564881184586505,
-          "half": 2.0554285803833703
+          "mean": 0.11575388776200135,
+          "half": 0.5738747802569303
         }
       },
       {
         "configuration": 0,
         "fleet": 4,
-        "warmupSeconds": 0,
+        "warmupSeconds": 50,
         "detected": true,
         "replicationWarmupSeconds": [
-          0,
+          50,
           0
         ],
         "throughput": [
-          67.5,
-          85.5
+          124.8,
+          168
         ],
         "lostRatio": [
-          0.9546401086464463,
-          0.7761194029850746
+          0.37077009555930296,
+          0.25362400906002264
         ],
         "meanThroughput": {
-          "mean": 76.5,
-          "half": 114.354
+          "mean": 146.4,
+          "half": 274.44960000000003
         },
         "meanLostRatio": {
-          "mean": 0.8653797558157605,
-          "half": 1.1341420430666942
+          "mean": 0.31219705230966277,
+          "half": 0.7442290875299279
         }
       },
       {
         "configuration": 1,
         "fleet": 2,
-        "warmupSeconds": 400,
-        "detected": false,
+        "warmupSeconds": 150,
+        "detected": true,
         "replicationWarmupSeconds": [
-          400,
-          100
+          0,
+          150
         ],
         "throughput": [
-          54,
-          99
+          105.23076923076923,
+          132.92307692307693
         ],
         "lostRatio": [
-          0.833984962406015,
-          0.411214953271028
+          0,
+          0.0038147138964577656
         ],
         "meanThroughput": {
-          "mean": 76.5,
-          "half": 285.885
+          "mean": 119.07692307692308,
+          "half": 175.92923076923086
         },
         "meanLostRatio": {
-          "mean": 0.6225999578385215,
-          "half": 2.6858578680345726
+          "mean": 0.0019073569482288828,
+          "half": 0.024234877384196184
         }
       },
       {
@@ -1130,20 +1139,20 @@
           0
         ],
         "throughput": [
-          72,
-          85.5
+          171,
+          175.5
         ],
         "lostRatio": [
-          0.8548214285714286,
-          0.7477604903347478
+          0.06485900216919739,
+          0.035564435564435566
         ],
         "meanThroughput": {
-          "mean": 78.75,
-          "half": 85.7655
+          "mean": 173.25,
+          "half": 28.5885
         },
         "meanLostRatio": {
-          "mean": 0.8012909594530881,
-          "half": 0.6801581406176334
+          "mean": 0.05021171886681648,
+          "half": 0.18610838164005186
         }
       }
     ],
@@ -1152,64 +1161,64 @@
         "configuration": 0,
         "fleet": 2,
         "seed": 3093350482,
-        "operations": 180052,
-        "searches": 58,
+        "operations": 221408,
+        "searches": 97,
         "exhausted": 0
       },
       {
         "configuration": 0,
         "fleet": 2,
         "seed": 166052715,
-        "operations": 132008,
-        "searches": 116,
+        "operations": 186552,
+        "searches": 151,
         "exhausted": 0
       },
       {
         "configuration": 0,
         "fleet": 4,
         "seed": 3093350482,
-        "operations": 240536,
-        "searches": 75,
+        "operations": 366708,
+        "searches": 298,
         "exhausted": 0
       },
       {
         "configuration": 0,
         "fleet": 4,
         "seed": 166052715,
-        "operations": 204496,
-        "searches": 118,
+        "operations": 365428,
+        "searches": 257,
         "exhausted": 0
       },
       {
         "configuration": 1,
         "fleet": 2,
         "seed": 3093350482,
-        "operations": 2242052,
-        "searches": 284,
-        "exhausted": 0
-      },
-      {
-        "configuration": 1,
-        "fleet": 2,
-        "seed": 166052715,
-        "operations": 1929460,
-        "searches": 255,
-        "exhausted": 0
-      },
-      {
-        "configuration": 1,
-        "fleet": 4,
-        "seed": 3093350482,
-        "operations": 3228823,
-        "searches": 400,
-        "exhausted": 0
-      },
-      {
-        "configuration": 1,
-        "fleet": 4,
-        "seed": 166052715,
-        "operations": 2795416,
+        "operations": 2772557,
         "searches": 351,
+        "exhausted": 0
+      },
+      {
+        "configuration": 1,
+        "fleet": 2,
+        "seed": 166052715,
+        "operations": 2571502,
+        "searches": 334,
+        "exhausted": 0
+      },
+      {
+        "configuration": 1,
+        "fleet": 4,
+        "seed": 3093350482,
+        "operations": 5437033,
+        "searches": 681,
+        "exhausted": 0
+      },
+      {
+        "configuration": 1,
+        "fleet": 4,
+        "seed": 166052715,
+        "operations": 4729734,
+        "searches": 597,
         "exhausted": 0
       }
     ],
@@ -1218,49 +1227,49 @@
         "configuration": 0,
         "fleet": 2,
         "seed": 3093350482,
-        "seconds": 0.071
+        "seconds": 0.021200000047683715
       },
       {
         "configuration": 0,
         "fleet": 2,
         "seed": 166052715,
-        "seconds": 0.06340000009536743
+        "seconds": 0.014899999976158143
       },
       {
         "configuration": 0,
         "fleet": 4,
         "seed": 3093350482,
-        "seconds": 0.024200000047683717
+        "seconds": 0.018
       },
       {
         "configuration": 0,
         "fleet": 4,
         "seed": 166052715,
-        "seconds": 0.016799999952316284
+        "seconds": 0.017600000023841857
       },
       {
         "configuration": 1,
         "fleet": 2,
         "seed": 3093350482,
-        "seconds": 0.17460000002384185
+        "seconds": 0.08239999997615814
       },
       {
         "configuration": 1,
         "fleet": 2,
         "seed": 166052715,
-        "seconds": 0.07929999995231628
+        "seconds": 0.05889999997615814
       },
       {
         "configuration": 1,
         "fleet": 4,
         "seed": 3093350482,
-        "seconds": 0.22929999995231629
+        "seconds": 0.12110000002384186
       },
       {
         "configuration": 1,
         "fleet": 4,
         "seed": 166052715,
-        "seconds": 0.19379999995231628
+        "seconds": 0.1055
       }
     ]
   },
@@ -1270,17 +1279,17 @@
         "profile": "lifts",
         "stats": {
           "frames": 120,
-          "fps": 60.00300015000757,
+          "fps": 60.00300015000745,
           "p95": 16.799999999999272,
-          "max": 16.799999999999272,
+          "max": 16.80000000000291,
           "robot": true,
           "count": 4,
           "instanced": true,
           "still": 0,
-          "maxMove": 0.5299999713897705,
-          "totalMove": 65.93095468924075,
-          "binMove": 5.087599992752075,
-          "meanDt": 16.665833333333314,
+          "maxMove": 0.5,
+          "totalMove": 91.84677055527408,
+          "binMove": 23.204979956150055,
+          "meanDt": 16.665833333333346,
           "drawCalls": 22,
           "triangles": 57550
         },
@@ -1299,25 +1308,25 @@
         "profile": "autostore",
         "stats": {
           "frames": 120,
-          "fps": 59.99999999999999,
-          "p95": 16.799999999999727,
-          "max": 16.800000000000182,
+          "fps": 60.00300015000751,
+          "p95": 16.799999999999272,
+          "max": 16.80000000000109,
           "robot": true,
           "count": 4,
           "instanced": true,
-          "still": 1,
-          "maxMove": 0.37800002098083496,
-          "totalMove": 49.49105020122745,
-          "binMove": 29.180250465869904,
-          "meanDt": 16.666666666666668,
+          "still": 0,
+          "maxMove": 0.5100002288818359,
+          "totalMove": 107.23804055116565,
+          "binMove": 75.764000415802,
+          "meanDt": 16.66583333333333,
           "drawCalls": 18,
           "triangles": 23110
         },
         "cycles": [
           2,
-          2,
-          2,
-          2
+          3,
+          4,
+          3
         ],
         "resources": [
           15,
@@ -1494,27 +1503,27 @@
       {
         "configuration": 0,
         "fleet": 2,
-        "warmupSeconds": 200,
+        "warmupSeconds": 100,
         "detected": true,
         "replicationWarmupSeconds": [
-          200,
-          0
+          100,
+          50
         ],
         "throughput": [
-          138,
-          132
+          169.71428571428572,
+          174.85714285714286
         ],
         "lostRatio": [
-          0.3114478114478115,
-          0.35306859205776175
+          0.054752418895845194,
+          0.06233766233766234
         ],
         "meanThroughput": {
-          "mean": 135,
-          "half": 38.117999999999995
+          "mean": 172.28571428571428,
+          "half": 32.6725714285714
         },
         "meanLostRatio": {
-          "mean": 0.33225820175278664,
-          "half": 0.26441681921501414
+          "mean": 0.058545040616753766,
+          "half": 0.04818905158586431
         }
       },
       {
@@ -1527,46 +1536,46 @@
           0
         ],
         "throughput": [
-          81,
-          81
+          85.5,
+          94.5
         ],
         "lostRatio": [
-          0.12538360368259535,
-          0.14679715302491103
+          0.3256219991270188,
+          0.1818900751285093
         ],
         "meanThroughput": {
-          "mean": 81,
-          "half": 0
+          "mean": 90,
+          "half": 57.177
         },
         "meanLostRatio": {
-          "mean": 0.1360903783537532,
-          "half": 0.13604027897173152
+          "mean": 0.25375603712776407,
+          "half": 0.9131289131625308
         }
       },
       {
         "configuration": 2,
         "fleet": 2,
-        "warmupSeconds": 0,
+        "warmupSeconds": 350,
         "detected": true,
         "replicationWarmupSeconds": [
-          0,
-          0
+          350,
+          300
         ],
         "throughput": [
-          54,
-          63.00000000000001
+          104,
+          120
         ],
         "lostRatio": [
-          0.7301694915254238,
-          0.749624060150376
+          0.10668924640135478,
+          0.06040268456375839
         ],
         "meanThroughput": {
-          "mean": 58.5,
-          "half": 57.17700000000004
+          "mean": 112,
+          "half": 101.648
         },
         "meanLostRatio": {
-          "mean": 0.7398967758378998,
-          "half": 0.12359487447432137
+          "mean": 0.08354596548255659,
+          "half": 0.29405852735424987
         }
       }
     ]
@@ -1574,52 +1583,52 @@
   "rhcr": {
     "live": {
       "frames": 120,
-      "fps": 59.99999999999999,
-      "p95": 16.799999999999955,
+      "fps": 60.003000150007495,
+      "p95": 16.700000000000273,
       "max": 16.800000000000182,
       "robot": true,
       "count": 20,
       "instanced": true,
-      "still": 15,
-      "maxMove": 0.039600372314453125,
-      "totalMove": 8.402800559997559,
+      "still": 9,
+      "maxMove": 0.048999786376953125,
+      "totalMove": 44.599600315093994,
       "binMove": 0,
-      "meanDt": 16.666666666666668,
+      "meanDt": 16.665833333333335,
       "drawCalls": 21,
       "triangles": 636926
     },
     "fleets": [
       {
         "fleet": 100,
-        "frames": 118,
-        "fps": 58.99999999999999,
-        "p95": 16.799999999999272,
-        "max": 33.40000000000009,
+        "frames": 120,
+        "fps": 60.00300015000748,
+        "p95": 16.799999999999727,
+        "max": 16.800000000000182,
         "robot": true,
         "count": 100,
         "instanced": true,
-        "still": 7,
-        "maxMove": 0.03660011291503906,
-        "totalMove": 39.21659815311432,
+        "still": 9,
+        "maxMove": 0.04840087890625,
+        "totalMove": 83.81515326545278,
         "binMove": 0,
-        "meanDt": 16.949152542372882,
+        "meanDt": 16.66583333333334,
         "drawCalls": 21,
         "triangles": 846686
       },
       {
         "fleet": 300,
-        "frames": 112,
-        "fps": 55.53902608350688,
+        "frames": 115,
+        "fps": 57.502875143757194,
         "p95": 16.800000000000182,
-        "max": 66.59999999999945,
+        "max": 33.400000000000546,
         "robot": true,
         "count": 300,
         "instanced": true,
-        "still": 8,
-        "maxMove": 0.13759994506835938,
-        "totalMove": 115.390033258346,
+        "still": 9,
+        "maxMove": 0.08540058135986328,
+        "totalMove": 161.10481752275268,
         "binMove": 0,
-        "meanDt": 18.005357142857147,
+        "meanDt": 17.390434782608693,
         "drawCalls": 21,
         "triangles": 1371086
       }
@@ -2223,27 +2232,27 @@
       {
         "configuration": 0,
         "fleet": 2,
-        "warmupSeconds": 100,
+        "warmupSeconds": 50,
         "detected": true,
         "replicationWarmupSeconds": [
-          0,
-          100
+          50,
+          0
         ],
         "throughput": [
-          51.42857142857142,
-          102.85714285714285
+          91.2,
+          129.6
         ],
         "lostRatio": [
-          0.726649528706084,
-          0.4031128404669261
+          0.16091954022988506,
+          0.07058823529411765
         ],
         "meanThroughput": {
-          "mean": 77.14285714285714,
-          "half": 326.7257142857142
+          "mean": 110.4,
+          "half": 243.95519999999993
         },
         "meanLostRatio": {
-          "mean": 0.564881184586505,
-          "half": 2.0554285803833703
+          "mean": 0.11575388776200135,
+          "half": 0.5738747802569303
         }
       },
       {
@@ -2256,32 +2265,32 @@
           0
         ],
         "throughput": [
-          45,
-          90
+          90,
+          121.50000000000001
         ],
         "lostRatio": [
-          0.8063517915309446,
-          0.41543026706231456
+          0.005090236001850995,
+          0.0020181634712411706
         ],
         "meanThroughput": {
-          "mean": 67.5,
-          "half": 285.885
+          "mean": 105.75,
+          "half": 200.11950000000007
         },
         "meanLostRatio": {
-          "mean": 0.6108910292966296,
-          "half": 2.4835244449492064
+          "mean": 0.003554199736546083,
+          "half": 0.019516876786964208
         }
       }
     ]
   },
   "scenario": {
     "transfer": {
-      "robot": 0,
-      "bin": 0,
-      "level": 1,
-      "progress": 3,
-      "robotY": 1.600000023841858,
-      "binY": 2.049999952316284,
+      "robot": 16,
+      "bin": 118,
+      "level": 3,
+      "progress": 2,
+      "robotY": 4.400000095367432,
+      "binY": 4.849999904632568,
       "columns": 64,
       "bins": 512
     },
@@ -2289,71 +2298,71 @@
   },
   "campaign": {
     "during": {
-      "frames": 121,
-      "fps": 60.00198353664588,
+      "frames": 120,
+      "fps": 60.00198006534213,
       "p95": 16.700000000000728,
-      "max": 16.80000000000109,
+      "max": 16.800000000000182,
       "robot": true,
       "count": 20,
       "instanced": true,
-      "still": 121,
+      "still": 120,
       "maxMove": 0,
       "totalMove": 0,
       "binMove": 0,
-      "meanDt": 16.666115702479328,
+      "meanDt": 16.666116666666674,
       "drawCalls": 21,
       "triangles": 636926
     },
     "resultats": [
       {
         "fleet": 20,
-        "warmupSeconds": 0,
+        "warmupSeconds": 150,
         "detected": true,
         "meanThroughput": {
-          "mean": 169,
-          "half": 21.515
+          "mean": 309.7142857142857,
+          "half": 4.917714285714309
         },
         "meanLostRatio": {
-          "mean": 4.139884831062346,
-          "half": 1.0213616895303856
+          "mean": 3.0388507214880183,
+          "half": 0.550515159995714
         }
       },
       {
         "fleet": 100,
-        "warmupSeconds": 500,
+        "warmupSeconds": 450,
         "detected": true,
         "meanThroughput": {
-          "mean": 234.85714285714286,
-          "half": 19.516573528304434
+          "mean": 529.6,
+          "half": 30.010147446488823
         },
         "meanLostRatio": {
-          "mean": 7.70702742063168,
-          "half": 0.4005625250222582
+          "mean": 12.460176388003482,
+          "half": 0.5254203583919903
         }
       },
       {
         "fleet": 300,
-        "warmupSeconds": 600,
-        "detected": false,
+        "warmupSeconds": 250,
+        "detected": true,
         "meanThroughput": {
-          "mean": 474,
-          "half": 53.744452774216555
+          "mean": 653.0526315789474,
+          "half": 19.597499543142977
         },
         "meanLostRatio": {
-          "mean": 29.920277897669436,
-          "half": 1.2475004177364135
+          "mean": 33.010781839518614,
+          "half": 2.5905380170011756
         }
       }
     ]
   },
   "congestion": {
-    "tick": 1508,
+    "tick": 1507,
     "robots": 100,
-    "lostSteps": 137661,
-    "freeSteps": 5160,
-    "nonzero": 117,
-    "max": 1507,
-    "top": 518,
+    "lostSteps": 95886,
+    "freeSteps": 28860,
+    "nonzero": 1053,
+    "max": 1620,
+    "top": 1362,
     "layerY": 0.004,
     "top3d": [
       253,

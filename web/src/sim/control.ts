@@ -4,13 +4,16 @@ import { STEPS_PER_CELL, onGround } from './sim.ts'
 import { floorNeighbors } from './layout.ts'
 import { windowSearch } from './rhcr.ts'
 
-export type Control = { method: 'whole' | 'window' | 'rhcr'; horizon: number; budget: number }
+// lead : cycles d'avance permis sur le robot le plus lent (anti-famine) ; 0 = toute la flotte attend le dernier.
+// stationQueue : robots servis ou en route par station (défaut STATION_QUEUE dans sim.ts).
+export type Control = { method: 'whole' | 'window' | 'rhcr'; horizon: number; budget: number; lead?: number; stationQueue?: number }
 export const DEFAULT_CONTROL: Control = { method: 'whole', horizon: 8, budget: 100000 }
 export type ControlStats = { operations: number; searches: number; exhausted: number }
 export function validateControl(c: Control): void {
   if (!c || !['whole', 'window', 'rhcr'].includes(c.method) || !Number.isInteger(c.horizon) || c.horizon < 2 || c.horizon > 32 ||
-      !Number.isInteger(c.budget) || c.budget < 100 || c.budget > 1000000) {
-    throw new RangeError('Pilotage : méthode entière ou fenêtre, horizon de 2 à 32 déplacements, budget de 100 à 1000000 opérations par recherche.')
+      !Number.isInteger(c.budget) || c.budget < 100 || c.budget > 1000000 || c.lead !== undefined && (!Number.isInteger(c.lead) || c.lead < 0 || c.lead > 10) ||
+      c.stationQueue !== undefined && !(Number.isInteger(c.stationQueue) && c.stationQueue >= 1)) {
+    throw new RangeError('Pilotage : méthode entière ou fenêtre, horizon de 2 à 32 déplacements, budget de 100 à 1000000 opérations par recherche, avance de 0 à 10 cycles, file de station d’au moins 1 robot.')
   }
 }
 

@@ -98,7 +98,7 @@ export async function checkProfiles({ page, measure }) {
     assert.ok(fresh.robots.every((r) => r.returns >= 2))
     reports.push({ profile, stats, cycles: sim.robots.map((r) => r.returns), resources: [snapshot.geometries, snapshot.textures] })
   }
-  await page.getByRole('button', { name: 'Mesurer', exact: true }).click()
+  await page.locator('#tab-analyser').click()
   const dialog = page.locator('[aria-labelledby="campaign-title"]')
   await dialog.getByRole('checkbox', { name: 'Plan appliqué', exact: true }).uncheck()
   for (const profile of ['skypod', 'lifts', 'autostore']) await dialog.getByRole('checkbox', { name: `Profil ${profile}`, exact: true }).check()

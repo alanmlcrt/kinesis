@@ -67,7 +67,7 @@ test('profils : plans indépendants, conservation JSON, validation et édition d
 
 for (const profile of ['lifts', 'autostore'] as const) for (const method of ['whole', 'window'] as const) {
   test(`${profile}/${method} : deux cycles, exclusivité, bacs, positions et reprise déterministe`, () => {
-    const s = createSim(3, 4, withProfile(base, profile), { ...DEFAULT_CONTROL, method, budget: 1000000 })
+    const s = createSim(3, 4, withProfile(base, profile), { ...DEFAULT_CONTROL, method, budget: 1000000, lead: 0 }) // repos complet vérifié en fin de test
     const stacks = structuredClone(s.stacks), seen = new Set<string>()
     let lifted = false, dug = false
     const previous = s.robots.map((r) => { const p = point(); robotPosition(s, r, p); return p })

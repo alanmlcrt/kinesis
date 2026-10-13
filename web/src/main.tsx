@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useFrame, useThree, type RootState } from '@react-three/fiber'
 import { Grid, OrbitControls } from '@react-three/drei'
-import { Object3D, PMREMGenerator, type Mesh, type InstancedMesh, type PerspectiveCamera } from 'three'
+import { BufferAttribute, BufferGeometry, Color, DoubleSide, Line, LineBasicMaterial, Object3D, PMREMGenerator, type Mesh, type InstancedMesh, type PerspectiveCamera } from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { type OrbitControls as OrbitControl } from 'three/addons/controls/OrbitControls.js'
 import { binParts, PALETTE, rackParts, robotParts, stationParts } from './scene/assets.ts'
@@ -12,6 +12,7 @@ import { Editor } from './Editor.tsx'
 import { CongestionPanel, HeatLayer } from './Congestion.tsx'
 import { Campaign } from './Campaign.tsx'
 import { GEOMETRY } from './sim/geometry.ts'
+import { DEFAULT_CONTROL } from './sim/control.ts'
 import { loadConfiguration, saveConfiguration } from './preferences.ts'
 import { LiveLab } from './Lab.tsx'
 
@@ -49,8 +50,11 @@ function Robots({ sim, onSelect }: { sim: State; onSelect: (id: number) => void 
     // Retour dans Simuler : la boucle était arrêtée, le premier écart couvre tout le temps passé ailleurs.
     if (clock.resumed) { clock.resumed = false; delta = 0 }
     if (clock.playing) clock.acc += delta * clock.speed
+    // Plafond en pas et en temps (20 ms) : un pilotage coûteux (RHCR, 300 robots ≈ 80 ms/pas mesuré)
+    // ralentit la simulation au lieu de geler la page ; le retard est abandonné.
     let n = 0
-    while (clock.acc >= DT && n++ < MAX_STEPS_PER_FRAME) {
+    const until = performance.now() + 20
+    while (clock.acc >= DT && n++ < MAX_STEPS_PER_FRAME && (n === 1 || performance.now() < until)) {
       for (let i = 0; i < sim.robots.length; i++) robotPosition(sim, sim.robots[i], buffers.prev[i])
       for (let i = 0; i < sim.bins.length; i++) binPosition(sim, sim.bins[i], buffers.binPrev[i])
       step(sim)
@@ -114,6 +118,71 @@ function Selection({ sim, selected }: { sim: State; selected: number | null }) {
   return <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
     <ringGeometry args={[.55, .68, 32]} /><meshBasicMaterial color={PALETTE.accent} depthWrite={false} />
   </mesh>
+}
+
+// Robot sélectionné : positions passées échantillonnées dans l'état du moteur (traînée qui
+// s'efface) et trajet engagé restant, lu tel quel dans r.path (affichage seulement).
+// Dessinés par-dessus la scène : au sol, racks et bacs les masqueraient.
+const TRAIL = 240, AHEAD = 256
+const trailColor = new Color(), floorColor = new Color(PALETTE.floor), accentColor = new Color(PALETTE.accent)
+function Trail({ sim, selected }: { sim: State; selected: number | null }) {
+  const dots = useRef<InstancedMesh>(null!)
+  const marks = useRef<InstancedMesh>(null!)
+  const memo = useMemo(() => ({ trail: new Float32Array(TRAIL * 3), head: 0, count: 0, robot: -1, p: { x: 0, y: 0, z: 0 }, transform: new Object3D(),
+    line: new Line(new BufferGeometry().setAttribute('position', new BufferAttribute(new Float32Array((AHEAD + 1) * 3), 3)), new LineBasicMaterial({ color: PALETTE.accent, depthTest: false })) }), [sim])
+  useEffect(() => () => { memo.line.geometry.dispose(); (memo.line.material as LineBasicMaterial).dispose() }, [memo])
+  memo.transform.rotation.x = -Math.PI / 2 // disques et anneaux à plat
+  useLayoutEffect(() => {
+    for (let i = 0; i < TRAIL; i++) dots.current.setColorAt(i, accentColor)
+  }, [sim])
+  useFrame(() => {
+    const r = selected === null ? undefined : sim.robots[selected], m = memo, t = m.transform, line = m.line
+    dots.current.visible = marks.current.visible = line.visible = !!r
+    if (!r) return
+    if (m.robot !== r.id) { m.robot = r.id; m.count = 0 }
+    const ox = -sim.width / 2 + .5, oz = -sim.depth / 2 + .5
+    robotPosition(sim, r, m.p)
+    const last = (m.head + TRAIL - 1) % TRAIL * 3
+    if (m.count === 0 || Math.abs(m.trail[last] - m.p.x) + Math.abs(m.trail[last + 1] - m.p.y) + Math.abs(m.trail[last + 2] - m.p.z) > .15) {
+      m.trail[m.head * 3] = m.p.x; m.trail[m.head * 3 + 1] = m.p.y; m.trail[m.head * 3 + 2] = m.p.z
+      m.head = (m.head + 1) % TRAIL; m.count = Math.min(m.count + 1, TRAIL)
+    }
+    for (let k = 0; k < m.count; k++) {
+      const j = (m.head + TRAIL - 1 - k) % TRAIL * 3, f = 1 - k / TRAIL
+      t.position.set(m.trail[j] + ox, m.trail[j + 1] - GEOMETRY.robotCenterY + .03, m.trail[j + 2] + oz)
+      t.scale.setScalar(.35 + .65 * f); t.updateMatrix()
+      dots.current.setMatrixAt(k, t.matrix)
+      dots.current.setColorAt(k, trailColor.copy(floorColor).lerp(accentColor, f))
+    }
+    dots.current.count = m.count
+    dots.current.instanceMatrix.needsUpdate = true
+    dots.current.instanceColor!.needsUpdate = true
+    // Trajet futur : de la position affichée jusqu'au dernier nœud engagé.
+    const cells = sim.width * sim.depth, positions = line.geometry.attributes.position as BufferAttribute
+    positions.setXYZ(0, m.p.x + ox, m.p.y - GEOMETRY.robotCenterY + .04, m.p.z + oz)
+    const ahead = Math.min(r.pathLength - r.pathIndex, AHEAD)
+    for (let k = 0; k < ahead; k++) {
+      const c = r.path[r.pathIndex + k]
+      const y = elevation(sim, sim.layout.profile === 'lifts' ? Math.floor(c / cells) : r.level) + .04
+      positions.setXYZ(k + 1, c % sim.width + ox, y, Math.floor(c % cells / sim.width) + oz)
+      t.position.set(c % sim.width + ox, y, Math.floor(c % cells / sim.width) + oz)
+      t.scale.setScalar(1); t.updateMatrix()
+      marks.current.setMatrixAt(k, t.matrix)
+    }
+    positions.needsUpdate = true
+    line.geometry.setDrawRange(0, ahead > 0 ? ahead + 1 : 0)
+    marks.current.count = ahead
+    marks.current.instanceMatrix.needsUpdate = true
+  })
+  return <>
+    <instancedMesh name="trail" ref={dots} args={[undefined, undefined, TRAIL]} frustumCulled={false} visible={false} renderOrder={10}>
+      <circleGeometry args={[.09, 12]} /><meshBasicMaterial depthTest={false} />
+    </instancedMesh>
+    <instancedMesh name="trail-ahead" ref={marks} args={[undefined, undefined, AHEAD]} frustumCulled={false} visible={false} renderOrder={11}>
+      <ringGeometry args={[.16, .24, 24]} /><meshBasicMaterial color={PALETTE.accent} depthTest={false} side={DoubleSide} />
+    </instancedMesh>
+    <primitive object={memo.line} frustumCulled={false} visible={false} renderOrder={11} />
+  </>
 }
 
 type Placement = [number, number, number, number, number, number]
@@ -234,7 +303,7 @@ function CameraFit({ sim }: { sim: State }) {
   return null
 }
 
-function Controls({ count, onCount, sim, onEdit, onMeasure, onControl, error }: { count: number; onCount: (n: number) => void; sim: State; onEdit: () => void; onMeasure: () => void; onControl: (method: State['control']['method']) => void; error: string }) {
+function Controls({ count, onCount, sim, onEdit, error }: { count: number; onCount: (n: number) => void; sim: State; onEdit: () => void; error: string }) {
   const [playing, setPlaying] = useState(clock.playing)
   const [speed, setSpeed] = useState(clock.speed)
   return (
@@ -256,16 +325,9 @@ function Controls({ count, onCount, sim, onEdit, onMeasure, onControl, error }: 
           <option key={n} value={n} disabled={n > validateLayout(sim.layout)}>{n}</option>)}
       </select>
       <span className="meta">graine {sim.seed}</span>
-        <span className="choice"><label htmlFor="live-control">Pilotage</label>
-        <select id="live-control" name="live-control" value={sim.control.method} onChange={(e) => onControl(e.target.value as State['control']['method'])}>
-          <option value="whole">Trajet entier</option><option value="window">Fenêtre</option><option value="rhcr">RHCR priorisé</option>
-        </select>
-        </span>
-        <span className="meta">redémarre</span>
       </div>
-      <div className="control-group" role="group" aria-label="Entrepôt et mesures">
+      <div className="control-group" role="group" aria-label="Entrepôt">
       <button id="open-editor" onClick={onEdit}>Construire</button>
-      <button id="open-campaign" onClick={onMeasure}>Mesurer</button>
       </div>
       {error && <p role="alert" className="error">{error}</p>}
       <details className="meta">
@@ -287,7 +349,7 @@ function App() {
   const active = useRef<State | null>(null)
   if (!active.current) {
     const c = initial.current.configuration
-    active.current = createSim(c.seed, c.count, c.layout)
+    active.current = createSim(c.seed, c.count, c.layout, { ...DEFAULT_CONTROL, method: c.method ?? (c.layout.generation === 'classic' ? 'whole' : 'rhcr'), horizon: Math.max(DEFAULT_CONTROL.horizon, (c.layout.liftSteps ?? 5) / 5) })
   }
   const sim = active.current
   const [count, setCount] = useState(initial.current.configuration.count)
@@ -323,7 +385,7 @@ function App() {
     active.current = next
     setSelected(null)
     clock.acc = 0
-    const warning = saveConfiguration({ version: 1, seed: next.seed, count: n, layout: next.layout })
+    const warning = saveConfiguration({ version: 1, seed: next.seed, count: n, layout: next.layout, method })
     setCut(surfaceLevel(next)); setCount(n); setRevision((v) => v + 1); setError(warning)
   }
   const changeCount = (n: number) => {
@@ -366,6 +428,7 @@ function App() {
         <Warehouse sim={sim} />
         <Robots sim={sim} onSelect={setSelected} />
         <Selection sim={sim} selected={selected} />
+        <Trail sim={sim} selected={selected} />
         <HeatLayer sim={sim} level={level} />
       </group>
       <OrbitControls makeDefault enableDamping target={[0, 2, 0]} maxPolarAngle={Math.PI / 2 - 0.05} />
@@ -374,10 +437,10 @@ function App() {
     <LiveLab key={`lab-${revision}`} sim={sim} selected={selected} onSelect={setSelected} />
     <CongestionPanel key={`congestion-${revision}`} sim={sim} level={level} onLevel={setCut} />
     <Controls key={tab} count={count} onCount={changeCount} sim={sim} onEdit={() => navigate('concevoir')}
-      onMeasure={() => setMeasuring(true)} onControl={(method) => apply(sim.layout, count, method)} error={error} />
+      error={error} />
     </div>
     {tab === 'concevoir' && <div id="space-concevoir" role="tabpanel" aria-labelledby="tab-concevoir">
-      <Editor key={revision} layout={sim.layout} count={count} onApply={(layout, n) => { apply(layout, n); navigate('simulation'); document.getElementById('tab-simulation')?.focus() }} />
+      <Editor key={revision} layout={sim.layout} count={count} method={sim.control.method} onApply={(layout, n, method) => { apply(layout, n, method); navigate('simulation'); document.getElementById('tab-simulation')?.focus() }} />
       {error && <p className="workshop-error error" role="alert">{error}</p>}</div>}
     {tab === 'analyser' && <div id="space-analyser" role="tabpanel" aria-labelledby="tab-analyser" />}
     {measuring && <Campaign layout={sim.layout} onClose={closeCampaign} />}

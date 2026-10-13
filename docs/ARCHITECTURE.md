@@ -71,6 +71,8 @@ un profil = données + quelques branches explicites dans `layoutFloor`, `floorNe
   re-rendre à chaque image), l’onglet (fragment d’URL `#concevoir|#simulation|#analyser`),
   la révision (clé qui remplace proprement toutes les instances 3D) et `apply()`.
   L’horloge `clock` (lecture, vitesse, accumulateur) est un objet module lu par `useFrame`.
+  `Trail` : robot sélectionné, traînée des 240 dernières positions (anneau tampon, dégradé)
+  et nœuds engagés restants `r.path[pathIndex..pathLength)`, dessinés sans test de profondeur.
   Hors de Simuler, le `Canvas` passe en `frameloop="never"` : la scène cachée ne se
   redessine plus pendant Concevoir et Analyser.
 - `Editor.tsx` : brouillon local (`draft`, historique de 50), gestes pointeur (peinture

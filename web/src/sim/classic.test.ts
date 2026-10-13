@@ -6,20 +6,22 @@ import { runReplication, validateCampaign } from './campaign.ts'
 
 const spec: AisleSpec = { width: 48, depth: 32, levels: 4, block: 12, aisle: 1, cross: 0, front: 0, stations: 4, sides: 1, fill: 100, storage: 'random', generation: 'classic' }
 
-test('classique : rayonnages bloqués au sol, allée de grimpe traversable, même capacité', () => {
+test('classique : rayonnages bloqués au sol, allée de grimpe traversable ; 2025+ plus dense', () => {
   const classic = aisleLayout(spec), modern = aisleLayout({ ...spec, generation: '2025+' })
   const a = createSim(1, 72, classic), b = createSim(1, 72, modern)
   assert.deepEqual(a.floor, layoutFloor(classic))
   const { fleet: _, ...shared } = layoutMetrics(classic), { fleet: __, ...modernShared } = layoutMetrics(modern)
-  assert.deepEqual(shared, modernShared, 'même capacité, emprise et sol libre')
+  assert.ok(modernShared.slots > shared.slots && modernShared.area === shared.area, '2025+ : rayonnages jointifs, plus de capacité à emprise égale')
   const backs = classic.racks.filter((p) => classic.racks.some((q) => q.x === p.x + 4 && q.z === p.z)).length
   assert.equal(a.floor.filter((k) => k === 'blocked').length, classic.racks.length * 2 + backs, 'rayonnages et dos à dos')
   for (const { x, z } of classic.racks) {
     assert.equal(a.floor[z * a.width + x], 'column', 'allée de grimpe')
     for (const side of [-1, 1]) {
       assert.equal(a.floor[z * a.width + x + side], 'blocked', 'passage sous les rayonnages interdit en classique')
-      assert.equal(b.floor[z * b.width + x + side], 'lane', 'passage sous les rayonnages en 2025+')
     }
+  }
+  for (const { x, z } of modern.racks) {
+    for (const side of [-1, 1]) assert.equal(b.floor[z * b.width + x + side], 'lane', 'passage sous les rayonnages en 2025+')
   }
 })
 

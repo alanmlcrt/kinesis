@@ -29,6 +29,11 @@ pas le solveur.
   en 2025+, passage au sol sous un robot en montée (accès traversable).
   Puis travée Exotec rayonnage | allée | rayonnage (brevet US11208264B2), modèles par
   technologie et tracé ligne/zone dans Concevoir ; dépôt public github.com/alanmlcrt/kinesis.
+  Ensuite : tracé en un geste (clic/glisser-rectangle), rayonnages 2025+ jointifs (pas de 3),
+  pilotage choisi dans Concevoir (RHCR par défaut hors classique), Mesurer et Pilotage retirés
+  de Simuler ; flotte plus active (avance de 3 cycles au lieu d’attendre le dernier robot).
+  Fusion du pinceau cloud (67a9ced) ; file de station à 2 robots contre le blocage
+  définitif de la flotte autour des stations ; traînée du robot sélectionné dans Simuler.
 
 - [ ] **Parcours, comparaison et missions (proposition validée le 12 octobre).** Étapes,
   une à la fois :

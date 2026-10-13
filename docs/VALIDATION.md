@@ -18,9 +18,8 @@ d’exécution adaptative diffère du benchmark synchrone h = 1. La sécurité d
 benchmark n’est donc pas présentée comme une preuve suffisante pour l’adaptation.
 Les tests du moteur exercent séparément celle-ci sur les trois profils.
 
-L’interface est conservée. Le sélecteur **Pilotage** redémarre le run courant et
-permet trajet entier, fenêtre et RHCR priorisé. Le choix reste dans cette session ;
-après rechargement, le trajet entier est rétabli. Les changements de flotte et de
+Depuis le 12 octobre, le pilotage se choisit dans Concevoir (RHCR par défaut hors
+classique) et il est sauvegardé avec la configuration. Les changements de flotte et de
 plan conservent la méthode active et adaptent l’horizon à la durée d’ascenseur.
 Dans **Mesurer**, la comparaison existante propose RHCR en remplacement de la
 fenêtre engagée ; les paramètres, compteurs et séries sont exportés.

@@ -55,7 +55,9 @@ export function aisleLayout(a: AisleSpec): Layout {
     throw new RangeError('Le sol doit avoir des dimensions paires : largeur 16–80, profondeur 16–64 cellules.')
   }
   const xs: number[] = []
-  for (let x = 4, i = 0; x <= a.width - 4; x += ++i % a.block ? 4 : 3 + a.aisle) xs.push(x)
+  // Dans un bloc : rayonnages dos à dos, jointifs (pas de 3) ; en classique, une cellule pleine entre eux (pas de 4).
+  const pitch = a.generation === 'classic' ? 4 : 3
+  for (let x = 4, i = 0; x <= a.width - 4; x += ++i % a.block ? pitch : 3 + a.aisle) xs.push(x)
   const zs: number[] = []
   const first = a.sides === 2 ? 2 + a.front : 2, last = a.depth - 4 - a.front
   // Une allée transversale = une ligne laissée libre après au moins `cross` travées, sur une ligne
@@ -83,7 +85,7 @@ export function aisleLayout(a: AisleSpec): Layout {
 // Modèles par technologie, générés à la taille du sol choisie par l'utilisateur.
 export type Architecture = 'skypod' | 'classic' | 'lifts' | 'autostore'
 export const TEMPLATES: { id: string; architecture: Architecture; name: string; purpose: string }[] = [
-  { id: 'skypod-dense', architecture: 'skypod', name: 'Densité maximale', purpose: 'Allées de grimpe toutes les 4 cellules ; les robots passent sous les rayonnages.' },
+  { id: 'skypod-dense', architecture: 'skypod', name: 'Densité maximale', purpose: 'Rayonnages dos à dos sans case vide ; les robots passent sous les rayonnages.' },
   { id: 'skypod-balanced', architecture: 'skypod', name: 'Équilibré', purpose: 'Blocs de 4 allées, transversales régulières : stock et circulation.' },
   { id: 'skypod-flow', architecture: 'skypod', name: 'Débit prioritaire', purpose: 'Allées par paires, larges couloirs, stations des deux côtés.' },
   { id: 'classic-back', architecture: 'classic', name: 'Rayonnages dos à dos', purpose: 'Une allée de grimpe par paire de rayonnages ; on circule par les allées.' },
@@ -158,7 +160,8 @@ export function validateLayout(layout: Layout): number {
   for (const [kind, points] of [['rack', racks], ['station', stations]] as const) for (const p of points) {
     // Travées sur toutes les lignes (rangées continues) ; stations aux emplacements pairs.
     // AutoStore : grille pleine, une pile sur toute cellule.
-    if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.z) || !(kind === 'rack' && layout.profile === 'autostore') && p.x % 2 || kind !== 'rack' && p.z % 2 ||
+    // Travées sur toute colonne hors classique : rayonnages dos à dos sans case vide (passage sous les racks).
+    if (!p || !Number.isInteger(p.x) || !Number.isInteger(p.z) || !(kind === 'rack' && layout.generation !== 'classic') && p.x % 2 || kind !== 'rack' && p.z % 2 ||
         p.x < 0 || p.z < 0 || p.x > width - 2 || p.z > depth - 2 ||
         kind === 'rack' && (p.x < bounds.x0 || p.x > bounds.x1 || p.z < bounds.z0 || p.z > bounds.z1)) {
       throw new RangeError('Placement hors du sol ou hors des emplacements pairs autorisés.')
@@ -233,7 +236,8 @@ export function layoutFloor(layout: Layout): Floor[] {
     c % width % 2 === 0 && Math.floor(c / width) % 2 === 0 ? 'parking' : 'lane')
   for (const { x, z } of layout.racks) {
     // Travée : allée de grimpe (x) entre deux rayonnages (x ± 1) ; rayonnages bloqués au sol en classique.
-    if (layout.generation === 'classic') floor[z * width + x - 1] = floor[z * width + x + 1] = 'blocked'
+    // Hors classique, sous un rayonnage on circule mais on ne stationne pas (allée de grimpe sur colonne impaire).
+    if (layout.profile !== 'autostore') floor[z * width + x - 1] = floor[z * width + x + 1] = layout.generation === 'classic' ? 'blocked' : 'lane'
     floor[z * width + x] = 'column'
   }
   // Classique : deux rayonnages dos à dos (x + 1 et x + 3) sont jointifs ; la cellule entre eux est pleine.
@@ -252,7 +256,8 @@ export function layoutFloor(layout: Layout): Floor[] {
 export function editLayout(layout: Layout, tool: 'rack' | 'station' | 'lift' | 'erase', x: number, z: number): Layout {
   validateLayout(layout)
   if (!['rack', 'station', 'lift', 'erase'].includes(tool)) throw new RangeError('Outil de placement inconnu.')
-  if (!Number.isInteger(x) || !Number.isInteger(z) || x % 2 && tool !== 'erase' && !(layout.profile === 'autostore' && tool !== 'station') || (tool === 'station' || tool === 'lift') && z % 2 || x < 0 || z < 0 || x >= layout.width || z >= layout.depth) {
+  const fine = tool === 'erase' || tool === 'rack' && (layout.generation !== 'classic' || layout.profile === 'autostore')
+  if (!Number.isInteger(x) || !Number.isInteger(z) || x % 2 && !fine || (tool === 'station' || tool === 'lift') && z % 2 || x < 0 || z < 0 || x >= layout.width || z >= layout.depth) {
     throw new RangeError('Choisir des coordonnées paires à l’intérieur du sol (une travée peut aussi occuper une ligne impaire).')
   }
   const next: Layout = { ...layout, racks: layout.racks.map((p) => ({ ...p })), stations: layout.stations.map((p) => ({ ...p })), ...(layout.lifts ? { lifts: layout.lifts.map((p) => ({ ...p })) } : {}) }
@@ -281,7 +286,7 @@ export function resizeLayout(layout: Layout, width: number, depth: number): Layo
   return next
 }
 
-export type Configuration = { version: 1; seed: number; count: number; layout: Layout }
+export type Configuration = { version: 1; seed: number; count: number; layout: Layout; method?: 'whole' | 'window' | 'rhcr' }
 
 export function validateSeed(seed: number): void {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff) throw new RangeError('La graine doit être un entier entre 0 et 4294967295.')
@@ -298,7 +303,8 @@ export function parseConfiguration(value: unknown): Configuration {
   if (data.version !== 1) throw new RangeError('Version de configuration non prise en charge.')
   const layout = parseLayout(data.layout)
   validateSeed(data.seed as number); validateFleet(data.count as number, validateLayout(layout))
-  return { version: 1, seed: data.seed as number, count: data.count as number, layout }
+  if (data.method !== undefined && !['whole', 'window', 'rhcr'].includes(data.method as string)) throw new RangeError('Méthode de pilotage inconnue.')
+  return { version: 1, seed: data.seed as number, count: data.count as number, layout, ...(data.method ? { method: data.method as Configuration['method'] } : {}) }
 }
 
 // Ne conserver que les données connues, jamais les autres propriétés d'un JSON reçu.

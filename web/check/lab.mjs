@@ -60,6 +60,14 @@ export async function checkLab({ browser, PAGE }) {
     await page.waitForFunction(() => window.kinesis.sim.robots.some((r) => r.returns > 0), undefined, { timeout: 30000 })
     await page.getByRole('button', { name: 'Pause', exact: true }).click()
     await page.waitForTimeout(400)
+    // Traînée du robot sélectionné : historique non vide, un repère par nœud engagé restant.
+    const trail = await page.evaluate(() => {
+      const id = Number(document.querySelector('.robot-inspector summary').textContent.match(/R(\d+)/)[1]) - 1
+      const r = window.kinesis.sim.robots[id], scene = window.kinesisView.scene
+      return { dots: scene.getObjectByName('trail').count, marks: scene.getObjectByName('trail-ahead').count, ahead: Math.min(r.pathLength - r.pathIndex, 256) }
+    })
+    assert.ok(trail.dots > 1, `traînée vide (${trail.dots})`)
+    assert.equal(trail.marks, trail.ahead)
     const stats = await page.evaluate(() => {
       const s = window.kinesis.sim, returns = s.robots.reduce((n, r) => n + r.returns, 0)
       return { mean: s.robots.reduce((n, r) => n + r.cycleSteps, 0) * .1 / returns, served: s.robots.reduce((n, r) => n + r.visits, 0), time: s.tick * .1 }
@@ -117,10 +125,13 @@ export async function checkLab({ browser, PAGE }) {
     await capture('mobile-live')
     const box = await page.locator('.live-lab').boundingBox()
     assert.ok(box.x >= 0 && box.x + box.width <= 390)
+    // Lecture puis Pause peut laisser passer une image : comparer au tick relevé, pas à 0.
+    const before = await page.evaluate(() => window.kinesis.sim.tick)
     await page.goto(`${PAGE.split('#')[0]}#analyser`)
     await page.locator('#campaign-title').waitFor()
     await page.waitForFunction(() => !!window.kinesis)
-    assert.equal(await page.evaluate(() => window.kinesis.sim.tick), 0)
+    await page.waitForTimeout(300)
+    assert.equal(await page.evaluate(() => window.kinesis.sim.tick), before, 'Analyser a fait avancer le moteur')
     assert.deepEqual(errors, [])
     console.log('Laboratoire : atelier en pause, lancement, clic 3D, fiche robot, quatre courbes conformes au moteur, navigation clavier, redémarrage et mobile vérifiés')
     console.log(`Courbes actives, 20 robots, 1×, 2 s, un seul run : ${frames.fps.toFixed(1)} images/s, p95 ${frames.p95.toFixed(1)} ms, max ${frames.max.toFixed(1)} ms`)

@@ -27,9 +27,9 @@ export async function checkBrush({ browser, PAGE }) {
   assert.equal(await racks(), 16, 'zone au clic droit : gomme incomplète')
   assert.equal(await page.getByRole('button', { name: 'Travée', exact: true }).getAttribute('aria-pressed'), 'true')
 
-  // Zone de la colonne 8 au bord droit : travées tous les 4, calées pour atteindre x = 44 (plus de colonne vide à droite).
+  // Zone de la colonne 8 au bord droit : rayonnages jointifs (pas de 3), calés pour atteindre x = 44 (plus de colonne vide à droite).
   await drag([8.5, 2.5], [47.5, 5.5], 'left', 4)
-  assert.equal(await racks(), 16 + 9 * 4, 'zone : nombre de travées')
+  assert.equal(await racks(), 16 + 12 * 4, 'zone : nombre de travées')
   assert.equal(Math.max(...await xs()), 44, 'zone : la dernière allée doit toucher la bordure droite')
 
   // Trait rapide en un seul mouvement : aucune ligne sautée, annulé en une fois.
@@ -40,14 +40,14 @@ export async function checkBrush({ browser, PAGE }) {
   await page.getByRole('button', { name: 'Annuler la modification', exact: true }).click()
   assert.equal(await racks(), before, 'un trait doit s’annuler en une fois')
 
-  // Travée centrée sous le pointeur : sur la moitié droite de la cellule 11, l'allée va en 12 (emprise 11 à 13).
+  // Travée centrée sous le pointeur : en 2025+, l'allée va dans la cellule visée, 11 (emprise 10 à 12).
   const p = await at(11.8, 24.5)
   await page.mouse.move(p.x, p.y)
-  assert.equal(await page.locator('.plan-ghost').getAttribute('x'), '11', 'fantôme non centré sous le pointeur')
+  assert.equal(await page.locator('.plan-ghost').getAttribute('x'), '10', 'fantôme non centré sous le pointeur')
   await page.mouse.down(); await page.mouse.up()
-  assert.ok((await xs()).includes(12), 'travée posée ailleurs que sous le pointeur')
-  // Clic droit sur un rayonnage (cellule 13) : retire la travée entière.
-  const n = await racks(), q = await at(13.5, 24.5)
+  assert.ok((await xs()).includes(11), 'travée posée ailleurs que sous le pointeur')
+  // Clic droit sur un rayonnage (cellule 12) : retire la travée entière.
+  const n = await racks(), q = await at(12.5, 24.5)
   await page.mouse.click(q.x, q.y, { button: 'right' })
   assert.equal(await racks(), n - 1, 'clic droit sur un rayonnage sans effet')
 

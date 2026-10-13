@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { binPosition, createSim, DT, LEVEL_HEIGHT, robotPosition, step, type State, onGround } from './sim.ts'
+import { binPosition, createSim, DT, LEVEL_HEIGHT, robotPosition, step, STATION_QUEUE, type State, onGround } from './sim.ts'
+import { DEFAULT_CONTROL, nodeOf } from './control.ts'
 
 function run(seed: number, count: number, ticks: number): State {
   const s = createSim(seed, count)
@@ -125,7 +126,8 @@ test('état sérialisable et reprise déterministe', () => {
 test('100 et 300 robots finissent tous un cycle sans famine', () => {
   for (const count of [100, 300]) {
     const s = createSim(1, count)
-    for (let i = 0; i < 60000 && !s.robots.every((r) => r.returns > 0); i++) step(s)
+    // Avance de 3 cycles permise : le dernier robot sert après ~97 000 pas à 300 robots (mesuré), sans famine.
+    for (let i = 0; i < 150000 && !s.robots.every((r) => r.returns > 0); i++) step(s)
     assert.ok(s.robots.every((r) => r.returns > 0), 'robot bloqué ou jamais servi')
   }
 })
@@ -154,4 +156,31 @@ test('trajets directs colonne-station-colonne sans détour imposé par la baie',
   }
   assert.ok(outbound && inbound)
   assert.equal(s.robots[0].returns, 1)
+})
+
+test('régression : un robot qui a fini son cycle repart sans attendre toute la flotte', () => {
+  const run = (lead: number) => {
+    const s = createSim(1, 20, undefined, { ...DEFAULT_CONTROL, lead })
+    for (let i = 0; i < 12000; i++) step(s)
+    return s.robots.reduce((n, r) => n + r.returns, 0)
+  }
+  // Mesuré (démo, 20 robots, 1 200 s) : 44 cycles avant correction ; 70 avec bac de repli seul (lead 0) ; 86 avec lead 3.
+  assert.ok(run(0) >= 60, 'bac de repli : un bac pris ne bloque plus le départ')
+  assert.ok(run(3) > 1.15 * run(0), 'avance de 3 cycles')
+  assert.throws(() => createSim(1, 20, undefined, { ...DEFAULT_CONTROL, lead: 11 }), RangeError)
+})
+
+test('file de station : la flotte ne s’entasse plus autour d’une station', () => {
+  // Reproduit le 12 octobre : 60 robots, pilotage fenêtre, plan par défaut ; sans limite, plus
+  // aucun service après le pas 4 654 (le robot servi encerclé par ceux qui attendent la station).
+  const served = (stationQueue: number) => {
+    const s = createSim(1, 60, undefined, { ...DEFAULT_CONTROL, method: 'window', stationQueue })
+    let before = 0
+    for (let t = 0; t < 9000; t++) { step(s); if (t === 6000) before = s.robots.reduce((n, r) => n + r.visits, 0) }
+    for (const r of s.robots) if (r.phase === 'service') assert.equal(r.station, nodeOf(s, r))
+    return s.robots.reduce((n, r) => n + r.visits, 0) - before
+  }
+  assert.equal(served(1e9), 0, 'sans limite : blocage définitif')
+  assert.ok(served(STATION_QUEUE) > 50, 'avec la file : services continus')
+  assert.throws(() => createSim(1, 20, undefined, { ...DEFAULT_CONTROL, stationQueue: 0 }), RangeError)
 })

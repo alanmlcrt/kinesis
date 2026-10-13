@@ -39,8 +39,9 @@ Relecture du brevet délivré [7] (même invention que [5]) à la demande de l'u
   double fond avec repositionnement ; non modélisé, non vérifié auprès d'Exotec).
 
 Modèle Kinesis : **une travée = rayonnage | allée de grimpe | rayonnage** (3 cellules),
-un bac de chaque côté par niveau. Deux allées voisines sont au moins à 4 cellules
-(rayonnages dos à dos). En 2025+, on circule au sol sous les rayonnages et dans l'allée,
+un bac de chaque côté par niveau. En 2025+, deux rayonnages voisins sont dos à dos et
+jointifs (allées à 3 cellules, aucune case vide, demande utilisateur du 12 octobre) ; en
+classique, allées à 4 cellules au moins. En 2025+, on circule au sol sous les rayonnages et dans l'allée,
 y compris sous un robot qui grimpe ; en classique, les rayonnages sont pleins au sol
 (dos à dos jointifs) et l'on circule par les allées et les transversales. Ni le brevet
 ni les pages Exotec ne donnent largeur d'allée, gabarit du robot, ni règle de croisement :
@@ -151,6 +152,10 @@ envoyer le robot et reste exclusive pendant montée, prise/dépôt et descente.
 Le robot tente les trajets directs colonne–station puis station–colonne. Si la
 destination est indisponible, il rejoint sa baie de stationnement pour libérer
 la ressource avant de réessayer. Il revient à sa baie après remise en stock.
+File de station (12 octobre) : au plus 2 robots servis ou en route vers une même station
+(`STATION_QUEUE`) ; les suivants attendent dans leur baie. Hypothèse du simulateur, non
+calibrée : sans elle, la flotte s'entassait autour d'une station et le robot servi ne
+pouvait plus sortir (blocage définitif mesuré, voir le journal).
 Ce repli et la réservation intégrale des trajets ajoutent des déplacements et de
 l'attente artificiels : ils ne reproduisent pas l'orchestration industrielle et ne
 permettent pas de conclure sur la saturation réelle d'un Skypod. Les robots sont traités par identifiant et tous

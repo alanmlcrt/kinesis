@@ -70,7 +70,9 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
       await new Promise((resolve) => setTimeout(resolve, 500))
       return { ticks: window.kinesis.sim.tick - tick, seconds: (performance.now() - start) / 1000 }
     })
-    assert.ok(Math.abs(sample.ticks - speed * sample.seconds / .1) <= 2, `vitesse ${speed}× : ${JSON.stringify(sample)}`)
+    // Plafond de 20 ms de calcul par image : sous charge, la simulation ralentit un peu au lieu de geler.
+    const wanted = speed * sample.seconds / .1
+    assert.ok(Math.abs(sample.ticks - wanted) <= Math.max(2, wanted * .05), `vitesse ${speed}× : ${JSON.stringify(sample)}`)
     report.speeds.push({ speed, ...sample })
   }
   await open(); await editor.locator('[data-preset="skypod-dense"]').click()
@@ -80,7 +82,8 @@ export async function checkRemaining({ browser, page, PAGE, measure, assertRende
   assert.equal(await page.getByRole('button', { name: 'Lecture', exact: true }).count(), 1)
   await assertRenderedPlan(); report.editor.push('passer par Concevoir met en pause ; plan appliqué prêt à lancer à t = 0')
 
-  for (const [preset, count, width, depth, levels] of [['skypod-dense', 220, 48, 32, 4], ['skypod-balanced', 300, 64, 40, 6], ['maximum', 300]]) {
+  // Plans 2025+ jointifs (12 octobre) : 107 et 228 baies au plus sur ces deux modèles.
+  for (const [preset, count, width, depth, levels] of [['skypod-dense', 100, 48, 32, 4], ['skypod-balanced', 220, 64, 40, 6], ['maximum', 300]]) {
     await open()
     if (preset !== 'maximum') {
       await fields({ 'Largeur (cellules)': width, 'Profondeur (cellules)': depth, Niveaux: levels })

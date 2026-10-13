@@ -460,7 +460,7 @@ try {
   const pausedLost = await page.evaluate(() => window.kinesis.sim.lostSteps)
   await page.waitForTimeout(500)
   assert.equal(await page.evaluate(() => window.kinesis.sim.lostSteps), pausedLost, 'temps perdu modifié en pause')
-  if (!wasPaused) await page.getByRole('button', { name: 'Lecture', exact: true }).click()
+  if (!wasPaused && await page.getByRole('button', { name: 'Lecture', exact: true }).count()) await page.getByRole('button', { name: 'Lecture', exact: true }).click()
   console.log(`Temps perdu vérifié : ${congestion.robots} robots, ${congestion.tick} pas, ${congestion.lostSteps} pas perdus / ${congestion.freeSteps} pas libres, ${congestion.nonzero} cases`)
   await page.setViewportSize({ width: 390, height: 844 })
   assert.ok(await page.locator('.panel').evaluate((p) => {
@@ -544,7 +544,7 @@ try {
   }
   // Étape 6 : campagne dans un Worker, export recalculé ici (Node) avec le même module pur.
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.getByRole('button', { name: 'Mesurer', exact: true }).click()
+  await page.locator('#tab-analyser').click()
   assert.equal(await page.evaluate(() => document.activeElement.id), 'campaign-title')
   const dialog = page.locator('section[aria-labelledby="campaign-title"]')
   const fill = async (values) => { for (const [name, value] of Object.entries(values)) await dialog.locator(`input[name="${name}"]`).fill(value) }
@@ -644,7 +644,7 @@ try {
   await dialog.locator('.legend-list').scrollIntoViewIfNeeded()
   await page.screenshot({ path: fileURLToPath(new URL('./campaign-mobile.png', import.meta.url)) })
   await page.keyboard.press('Escape')
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'open-campaign', 'focus non restauré après la campagne')
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'tab-simulation', 'focus non restauré après la campagne')
   console.log(`Campagne vérifiée : erreurs, annulation, fluidité pendant le calcul (p95 ${during.p95} ms), export recalculé ; ` +
     exported.resultats.map((r) => `${r.fleet} robots ${Math.round(r.meanThroughput.mean)} ± ${Math.round(r.meanThroughput.half)} bacs/h (chauffe ${r.warmupSeconds} s${r.detected ? '' : ', non détectée'})`).join(', '))
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -677,7 +677,7 @@ try {
   if (densePaused) await page.getByRole('button', { name: 'Pause', exact: true }).click() // état attendu par la suite du check
   assert.ok(denseStats.totalMove > 0, 'flotte immobile sur le plan dense')
   await page.screenshot({ path: fileURLToPath(new URL('./layout-aisles.png', import.meta.url)) })
-  await page.getByRole('button', { name: 'Mesurer', exact: true }).click()
+  await page.locator('#tab-analyser').click()
   await planBox('Plan appliqué').uncheck()
   await planBox('Dense').check(); await planBox('Aéré').check()
   await dialog.getByRole('radio', { name: 'Emprise au sol égale' }).check()

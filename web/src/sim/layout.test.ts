@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { DEFAULT_LAYOUT, editLayout, resizeLayout, storageSlots, TEMPLATES, templateLayout, withProfile, parseConfiguration, PRESETS, regularLayout, validateLayout, type Layout } from './layout.ts'
 import { GEOMETRY, LEVEL_HEIGHT } from './geometry.ts'
 import { createSim, step, onGround } from './sim.ts'
+import { DEFAULT_CONTROL } from './control.ts'
 
 test('plans prédéfinis et personnalisés : tailles, stockage et cycles sans collision', () => {
   for (const layout of [PRESETS.demo, PRESETS.dense, PRESETS.large, regularLayout(24, 20, 3, 4, 2, 2, 45)]) {
@@ -52,7 +53,7 @@ test('enveloppes compatibles avec la maille, les passages et le premier niveau',
 
 test('plans denses et limites : flotte maximale compatible, réservations et vertical cohérents', () => {
   for (const plan of [PRESETS.dense, { ...PRESETS.large, fill: 15 }, regularLayout(80, 64, 12, 20, 8, 12, 15)]) {
-    const s = createSim(7, Math.min(300, validateLayout(plan)), plan)
+    const s = createSim(7, Math.min(300, validateLayout(plan)), plan, { ...DEFAULT_CONTROL, lead: 0 }) // invariants, pas l'équité
     for (let tick = 0; tick < 100000 && !s.robots.every((r) => r.returns > 0); tick++) {
       step(s)
       const occupied = new Set<number>()
@@ -99,6 +100,8 @@ test('édition de travée/station et contrôle des chevauchements, bordures et c
   assert.equal(editLayout(added, 'rack', 10, 2).racks.length, 66, 'allées voisines à 4 cellules : rayonnages dos à dos')
   assert.throws(() => editLayout(initial, 'rack', 46, 2), /hors/)
   assert.throws(() => editLayout(initial, 'station', 3, 2), /paires/)
+  assert.equal(editLayout(added, 'rack', 5, 2).racks.length, 66, '2025+ : rayonnages dos à dos, allées à 3 cellules')
+  assert.throws(() => editLayout({ ...initial, generation: 'classic' }, 'rack', 5, 2), /paires/)
   assert.deepEqual(editLayout(added, 'erase', 3, 2), initial, 'la gomme retire la travée dont le rayonnage couvre la cellule')
   assert.deepEqual(editLayout(added, 'erase', 1, 3), added, 'cellule voisine : rien à retirer')
   // Remplissage automatique : rangées et stations réparties jusqu'au bord droit (plus de colonne vide).
